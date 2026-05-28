@@ -22,9 +22,12 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
+    linear-gradient(90deg, rgba(71, 58, 45, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(71, 58, 45, 0.04) 1px, transparent 1px),
     radial-gradient(circle at 12% 18%, rgba(143, 199, 164, 0.2), transparent 28%),
     radial-gradient(circle at 86% 12%, rgba(246, 200, 111, 0.22), transparent 28%),
     linear-gradient(135deg, #f9eadf 0%, #edf3e9 44%, #f6ecfb 100%);
+  background-size: 28px 28px, 28px 28px, auto, auto, auto;
 }
 
 button,
@@ -146,8 +149,175 @@ h2 {
 .workspace {
   min-height: 0;
   display: grid;
-  grid-template-columns: 260px minmax(520px, 1fr) 220px;
+  grid-template-columns: 250px minmax(560px, 1fr) 210px;
   gap: 14px;
+}
+
+.composer-stack {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+}
+
+.pocket-deck {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 190px;
+  gap: 12px;
+  border: 1px solid rgba(52, 43, 37, 0.34);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.6), transparent 18%),
+    linear-gradient(145deg, #f6d3b7 0%, #ecd9b7 48%, #d7e5d5 100%);
+  box-shadow: var(--shadow), inset 0 0 0 4px rgba(255, 255, 255, 0.24);
+  padding: 12px;
+}
+
+.pocket-face {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+}
+
+.pocket-screen {
+  grid-column: 1 / -1;
+  min-height: 84px;
+  display: grid;
+  grid-template-columns: 30px repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 12px;
+  border: 2px solid #574536;
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent),
+    #31483e;
+  color: #dff5c4;
+  padding: 12px;
+  font-family: "Courier New", ui-monospace, monospace;
+  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.pocket-screen strong {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+  line-height: 1;
+  color: #f4ffd8;
+}
+
+.lcd-label {
+  color: #a7c89b;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.run-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #6b7c69;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+}
+
+.run-dot.is-running {
+  background: #f6ff91;
+  box-shadow: 0 0 18px #f6ff91;
+}
+
+.step-leds {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(24px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+
+.step-led {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(57, 45, 34, 0.34);
+  background: #f7e8cc;
+  color: #6e5a42;
+  font-size: 0.72rem;
+  font-weight: 900;
+  box-shadow: inset 0 -4px 0 rgba(64, 45, 25, 0.12);
+}
+
+.step-led.has-note {
+  background: #ffd37f;
+}
+
+.step-led.is-active {
+  background: #2d574f;
+  color: #fff7cf;
+  box-shadow: 0 0 0 3px rgba(45, 87, 79, 0.2), 0 0 18px rgba(45, 87, 79, 0.55);
+}
+
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(54px, 1fr));
+  gap: 8px;
+}
+
+.performance-pad {
+  min-height: 62px;
+  display: grid;
+  gap: 2px;
+  align-content: center;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent), #4b3e33 40%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.08)),
+    color-mix(in srgb, var(--accent), #fff7e5 46%);
+  text-align: left;
+  box-shadow: inset 0 -7px 0 rgba(69, 47, 31, 0.12), 0 3px 0 rgba(83, 61, 42, 0.18);
+}
+
+.performance-pad span,
+.performance-pad small {
+  color: #65503d;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.performance-pad strong {
+  font-size: 0.88rem;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.performance-pad.is-selected {
+  outline: 3px solid #2f5b55;
+  outline-offset: 1px;
+}
+
+.pattern-bank {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  border-left: 1px dashed rgba(71, 55, 39, 0.34);
+  padding-left: 12px;
+}
+
+.pattern-bank::before {
+  content: "Pattern chain";
+  color: #6f5132;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pattern-bank button {
+  width: 100%;
+  justify-content: center;
+}
+
+.pattern-bank button.is-selected {
+  background: #2f5b55;
+  color: #fff;
+  box-shadow: none;
 }
 
 .palette,
@@ -228,6 +398,16 @@ h2 {
   margin-bottom: 10px;
 }
 
+.overview-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  z-index: 3;
+  background: #273f3a;
+  box-shadow: 0 0 12px rgba(39, 63, 58, 0.45);
+}
+
 .map-overview span {
   position: absolute;
   top: 6px;
@@ -264,6 +444,11 @@ h2 {
   color: #5d4d35;
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.step-header.is-active {
+  background: #2f5b55;
+  color: white;
 }
 
 .track-row {
@@ -328,6 +513,14 @@ h2 {
 
 .timeline-cell.is-over {
   background: #dff3e7;
+}
+
+.timeline-cell.is-active {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent),
+    repeating-linear-gradient(180deg, rgba(47, 91, 85, 0.28) 0 6px, rgba(47, 91, 85, 0.12) 6px 12px),
+    #dff3e7;
+  box-shadow: inset 2px 0 0 #2f5b55, inset -2px 0 0 #2f5b55;
 }
 
 .clip-sticker {
@@ -424,6 +617,19 @@ h2 {
   .topbar,
   .workspace {
     grid-template-columns: 1fr;
+  }
+
+  .pocket-deck,
+  .pocket-face {
+    grid-template-columns: 1fr;
+  }
+
+  .pattern-bank {
+    border-left: 0;
+    border-top: 1px dashed rgba(71, 55, 39, 0.34);
+    padding-left: 0;
+    padding-top: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .topbar,

@@ -4,6 +4,7 @@ import type { PatternClip, Project } from "../domain/types";
 
 type TimelineGridProps = {
   project: Project;
+  activeStep: number;
   onResizeClip: (clipId: string, deltaSteps: number) => void;
   onDuplicateClip: (clipId: string) => void;
   onRemoveClip: (clipId: string) => void;
@@ -14,6 +15,7 @@ type TimelineGridProps = {
 
 export function TimelineGrid({
   project,
+  activeStep,
   onResizeClip,
   onDuplicateClip,
   onRemoveClip,
@@ -26,6 +28,7 @@ export function TimelineGrid({
   return (
     <section className="timeline-shell" aria-label="Arrangement timeline">
       <div className="map-overview" aria-hidden="true">
+        <i className="overview-playhead" style={{ left: `${((activeStep + 0.5) / project.steps) * 100}%` }} />
         {project.clips.map((clip) => (
           <span
             key={clip.id}
@@ -45,7 +48,7 @@ export function TimelineGrid({
       >
         <div className="track-corner">Paths</div>
         {steps.map((step) => (
-          <div key={`header-${step}`} className="step-header">
+          <div key={`header-${step}`} className={`step-header ${step === activeStep ? "is-active" : ""}`}>
             {step + 1}
           </div>
         ))}
@@ -70,7 +73,7 @@ export function TimelineGrid({
               </div>
               <div className="track-cells">
                 {steps.map((step) => (
-                  <TimelineCell key={`${track.id}-${step}`} trackId={track.id} step={step} />
+                  <TimelineCell key={`${track.id}-${step}`} trackId={track.id} step={step} active={step === activeStep} />
                 ))}
                 {clips.map((clip) => (
                   <ClipSticker
@@ -92,7 +95,7 @@ export function TimelineGrid({
   );
 }
 
-function TimelineCell({ trackId, step }: { trackId: string; step: number }) {
+function TimelineCell({ trackId, step, active }: { trackId: string; step: number; active: boolean }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `cell-${trackId}-${step}`,
     data: { type: "cell", trackId, step }
@@ -102,8 +105,8 @@ function TimelineCell({ trackId, step }: { trackId: string; step: number }) {
     <div
       ref={setNodeRef}
       role="gridcell"
-      className={`timeline-cell ${isOver ? "is-over" : ""}`}
-      aria-label={`Step ${step + 1}`}
+      className={`timeline-cell ${isOver ? "is-over" : ""} ${active ? "is-active" : ""}`}
+      aria-label={`Step ${step + 1}${active ? " is playing" : ""}`}
     />
   );
 }

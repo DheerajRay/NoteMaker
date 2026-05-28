@@ -22,6 +22,12 @@ Chrome Music Lab validates a low-account, beginner-friendly music model. NoteMak
 
 Source: https://musiclab.chromeexperiments.com/About/
 
+## Pocket Sampler Reference
+
+Teenage Engineering's PO-33 K.O! is a useful reference for compact music-making: 16-step sequencing, 16 pads/sounds, 16 patterns, pattern chaining, punch-in effects, step multiplier, and a tiny status display. NoteMaker should borrow the interaction density and “track is visibly running” feedback, while keeping original visuals and beginner-friendly labels.
+
+Sources: https://teenage.engineering/products/po-33 and https://teenage.engineering/guides/po-33/en
+
 ## Later Waveform Editing
 
 wavesurfer.js is a useful later reference for region/waveform workflows, but v1 should not ship waveform editing. Pulling it in early would add complexity before the core grid arranger is stable.

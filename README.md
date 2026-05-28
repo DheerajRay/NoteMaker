@@ -6,6 +6,7 @@ NoteMaker is a local-first, browser-based storybook sequencer for creative begin
 
 - Vite, React, TypeScript, Tone.js, dnd-kit, Zustand, and Vitest.
 - Pastel storybook-map interface with instrument palette, timeline grid, minimap overview, transport controls, and project import/export.
+- Pocket-sampler-inspired performance deck with LCD status, 16 running step lights, 4x4 sound pads, and pattern loop buttons.
 - Local-first project storage through `localStorage` plus explicit JSON export/import.
 - Tested data model, sequencer expansion, deterministic audio schedule planning, and app shell rendering.
 
