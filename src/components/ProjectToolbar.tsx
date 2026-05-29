@@ -19,7 +19,7 @@ export function ProjectToolbar({ project, scheduleCount, onExport, onImport, onR
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">Local-first music map</p>
+        <p className="eyebrow">Local-first pocket sequencer</p>
         <h1>NoteMaker</h1>
       </div>
       <div className="project-status" aria-label="Project status">

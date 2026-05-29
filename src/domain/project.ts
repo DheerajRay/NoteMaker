@@ -4,12 +4,12 @@ import { PROJECT_VERSION, type InstrumentId, type InstrumentTrack, type PatternC
 const STORAGE_KEY = "notemaker.project.v1.current";
 
 const TRACKS: Array<{ id: string; name: string; instrumentId: InstrumentId }> = [
-  { id: "track-drums", name: "River Drums", instrumentId: "drum-kit" },
-  { id: "track-bass", name: "Moss Bass", instrumentId: "bass" },
-  { id: "track-keys", name: "Hill Keys", instrumentId: "keys" },
-  { id: "track-bells", name: "Bell Path", instrumentId: "bells" },
-  { id: "track-pluck", name: "Pebble Pluck", instrumentId: "pluck" },
-  { id: "track-pad", name: "Cloud Pad", instrumentId: "pad" }
+  { id: "track-drums", name: "Pocket Drums", instrumentId: "drum-kit" },
+  { id: "track-bass", name: "Sub Bass", instrumentId: "bass" },
+  { id: "track-keys", name: "Mini Keys", instrumentId: "keys" },
+  { id: "track-bells", name: "Glass Bells", instrumentId: "bells" },
+  { id: "track-pluck", name: "Tape Pluck", instrumentId: "pluck" },
+  { id: "track-pad", name: "Dust Pad", instrumentId: "pad" }
 ];
 
 export function createDefaultProject(): Project {
@@ -52,7 +52,7 @@ export function createDefaultProject(): Project {
   return {
     version: PROJECT_VERSION,
     id: createId("project"),
-    title: "Storybook Song",
+    title: "Pocket Session",
     createdAt: now,
     updatedAt: now,
     tempo: 112,

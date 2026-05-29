@@ -1,13 +1,12 @@
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NoteMakerAudioEngine, createSchedulePlan } from "./audio/engine";
-import { InstrumentPalette } from "./components/InstrumentPalette";
 import { PocketDeck } from "./components/PocketDeck";
 import { ProjectToolbar } from "./components/ProjectToolbar";
 import { TimelineGrid } from "./components/TimelineGrid";
 import { TransportBar } from "./components/TransportBar";
 import { downloadProject } from "./domain/project";
-import type { InstrumentId, Project } from "./domain/types";
+import type { Project } from "./domain/types";
 import { useProjectStore } from "./store/useProjectStore";
 
 export default function App() {
@@ -64,11 +63,6 @@ export default function App() {
       return;
     }
 
-    if (active?.type === "palette") {
-      addClip(over.trackId as string, active.instrumentId as InstrumentId, over.step as number);
-      return;
-    }
-
     addClip(over.trackId as string, selectedInstrumentId, over.step as number);
   }
 
@@ -117,9 +111,8 @@ export default function App() {
           onImport={handleImport}
           onReset={resetProject}
         />
-        <div className="workspace">
-          <InstrumentPalette selectedInstrumentId={selectedInstrumentId} onSelect={setSelectedInstrument} />
-          <div className="composer-stack">
+        <div className="operator-workbench">
+          <div className="operator-panel">
             <PocketDeck
               project={project}
               currentStep={currentStep}
@@ -138,30 +131,16 @@ export default function App() {
               onToggleRepeat={toggleRepeat}
               onToggleMute={toggleMute}
               onToggleSolo={toggleSolo}
+              onCreateClip={(trackId, step) => addClip(trackId, selectedInstrumentId, step)}
             />
           </div>
-          <aside className="inspector" aria-label="Song inspector">
-            <div className="panel-heading">
-              <p className="eyebrow">Map legend</p>
-              <h2>Song shape</h2>
-            </div>
-            <dl>
-              <div>
-                <dt>Audio</dt>
-                <dd>{audioReady ? "Ready" : "Tap Play to start"}</dd>
-              </div>
-              <div>
-                <dt>Loop</dt>
-                <dd>
-                  {project.loop.startStep + 1}-{project.loop.endStep}
-                </dd>
-              </div>
-              <div>
-                <dt>Selected</dt>
-                <dd>{selectedInstrumentId}</dd>
-              </div>
-            </dl>
-          </aside>
+          <div className="operator-readout" aria-label="Session readout">
+            <span>audio {audioReady ? "ready" : "armed"}</span>
+            <span>
+              loop {project.loop.startStep + 1}-{project.loop.endStep}
+            </span>
+            <span>sound {selectedInstrumentId}</span>
+          </div>
         </div>
         <TransportBar
           project={project}

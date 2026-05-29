@@ -27,7 +27,7 @@ export const INSTRUMENTS: InstrumentPreset[] = [
   },
   {
     id: "bells",
-    name: "Story Bells",
+    name: "Glass Bells",
     shortName: "Bells",
     description: "Bright small notes for melodies.",
     color: "#f6c86f",
@@ -35,7 +35,7 @@ export const INSTRUMENTS: InstrumentPreset[] = [
   },
   {
     id: "pluck",
-    name: "Pebble Pluck",
+    name: "Tape Pluck",
     shortName: "Pluck",
     description: "Short plucked sounds for playful rhythms.",
     color: "#d6a4ec",
@@ -43,7 +43,7 @@ export const INSTRUMENTS: InstrumentPreset[] = [
   },
   {
     id: "pad",
-    name: "Cloud Pad",
+    name: "Dust Pad",
     shortName: "Pad",
     description: "Long background sounds for atmosphere.",
     color: "#91d9df",

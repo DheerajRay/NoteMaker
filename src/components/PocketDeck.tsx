@@ -13,6 +13,7 @@ type PocketDeckProps = {
 };
 
 const PATTERN_STEPS = 16;
+const PUNCH_IN_FX = ["filter", "stutter", "tape", "crush", "delay", "reverse", "sweep", "freeze"];
 
 export function PocketDeck({
   project,
@@ -55,18 +56,31 @@ export function PocketDeck({
           </div>
         </div>
 
-        <div className="step-leds" aria-label="16 step running lights">
-          {Array.from({ length: PATTERN_STEPS }, (_, step) => (
-            <span
-              key={step}
-              className={`step-led ${activeSteps.has(step) ? "has-note" : ""} ${
-                step === activeStepInPattern ? "is-active" : ""
-              }`}
-              aria-label={`Step ${step + 1}${step === activeStepInPattern ? " is active" : ""}`}
-            >
-              {step + 1}
-            </span>
-          ))}
+        <div className="sequencer-cluster">
+          <div className="step-leds" aria-label="16 step running lights">
+            {Array.from({ length: PATTERN_STEPS }, (_, step) => (
+              <span
+                key={step}
+                className={`step-led ${activeSteps.has(step) ? "has-note" : ""} ${
+                  step === activeStepInPattern ? "is-active" : ""
+                }`}
+                aria-label={`Step ${step + 1}${step === activeStepInPattern ? " is active" : ""}`}
+              >
+                {step + 1}
+              </span>
+            ))}
+          </div>
+          <div className="fx-bank" aria-label="Punch-in FX">
+            <strong>Punch-in FX</strong>
+            <div>
+              {PUNCH_IN_FX.map((effect, index) => (
+                <button type="button" key={effect} aria-label={`FX ${index + 1} ${effect}`}>
+                  <span>{index + 1}</span>
+                  {effect}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="performance-grid" aria-label="16 sound pads">

@@ -9,7 +9,8 @@
 
 ## Component Tests
 
-- App shell renders the required composer controls.
+- App shell renders the pocket composer controls.
+- Pad selection creates clips on clicked grid cells.
 - Future tests should cover drag/drop reducers, keyboard movement, clip resize controls, import error handling, and local storage recovery.
 
 ## Browser Verification
@@ -18,13 +19,15 @@ Use Playwright or the in-app browser after major UI changes:
 
 - Desktop composer loads without console errors.
 - Mobile layout stacks controls without overlap.
-- User can drag from palette to timeline.
+- User can select a sound pad and click a timeline step to create a clip.
+- User can drag an existing clip to a different timeline step.
 - User can export and import a project.
 - Play button initializes audio after a gesture.
+- Running playback visibly advances the deck LEDs, timeline step header, active cells, and sequence overview playhead.
 
 ## Accessibility
 
-Check visible focus, role/name queries, transport labels, grid labeling, contrast on pastel backgrounds, and reduced-motion behavior.
+Check visible focus, role/name queries, transport labels, grid labeling, contrast on dark/metal surfaces, and reduced-motion behavior.
 
 ## Performance
 

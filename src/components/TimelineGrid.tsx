@@ -11,6 +11,7 @@ type TimelineGridProps = {
   onToggleRepeat: (clipId: string) => void;
   onToggleMute: (trackId: string) => void;
   onToggleSolo: (trackId: string) => void;
+  onCreateClip: (trackId: string, step: number) => void;
 };
 
 export function TimelineGrid({
@@ -21,13 +22,14 @@ export function TimelineGrid({
   onRemoveClip,
   onToggleRepeat,
   onToggleMute,
-  onToggleSolo
+  onToggleSolo,
+  onCreateClip
 }: TimelineGridProps) {
   const steps = Array.from({ length: project.steps }, (_, index) => index);
 
   return (
     <section className="timeline-shell" aria-label="Arrangement timeline">
-      <div className="map-overview" aria-hidden="true">
+      <div className="sequence-overview" aria-hidden="true">
         <i className="overview-playhead" style={{ left: `${((activeStep + 0.5) / project.steps) * 100}%` }} />
         {project.clips.map((clip) => (
           <span
@@ -46,7 +48,7 @@ export function TimelineGrid({
         className="timeline-grid"
         style={{ "--steps": project.steps } as React.CSSProperties}
       >
-        <div className="track-corner">Paths</div>
+        <div className="track-corner">Tracks</div>
         {steps.map((step) => (
           <div key={`header-${step}`} className={`step-header ${step === activeStep ? "is-active" : ""}`}>
             {step + 1}
@@ -73,10 +75,16 @@ export function TimelineGrid({
               </div>
               <div className="track-cells">
                 {steps.map((step) => (
-                  <TimelineCell key={`${track.id}-${step}`} trackId={track.id} step={step} active={step === activeStep} />
+                  <TimelineCell
+                    key={`${track.id}-${step}`}
+                    trackId={track.id}
+                    step={step}
+                    active={step === activeStep}
+                    onCreateClip={onCreateClip}
+                  />
                 ))}
                 {clips.map((clip) => (
-                  <ClipSticker
+                  <ClipBlock
                     key={clip.id}
                     clip={clip}
                     project={project}
@@ -95,7 +103,17 @@ export function TimelineGrid({
   );
 }
 
-function TimelineCell({ trackId, step, active }: { trackId: string; step: number; active: boolean }) {
+function TimelineCell({
+  trackId,
+  step,
+  active,
+  onCreateClip
+}: {
+  trackId: string;
+  step: number;
+  active: boolean;
+  onCreateClip: (trackId: string, step: number) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({
     id: `cell-${trackId}-${step}`,
     data: { type: "cell", trackId, step }
@@ -107,11 +125,12 @@ function TimelineCell({ trackId, step, active }: { trackId: string; step: number
       role="gridcell"
       className={`timeline-cell ${isOver ? "is-over" : ""} ${active ? "is-active" : ""}`}
       aria-label={`Step ${step + 1}${active ? " is playing" : ""}`}
+      onClick={() => onCreateClip(trackId, step)}
     />
   );
 }
 
-function ClipSticker({
+function ClipBlock({
   clip,
   project,
   onResizeClip,
@@ -137,7 +156,7 @@ function ClipSticker({
   return (
     <div
       ref={setNodeRef}
-      className={`clip-sticker ${isDragging ? "is-dragging" : ""}`}
+      className={`clip-block ${isDragging ? "is-dragging" : ""}`}
       aria-label={`${instrument.name} clip at step ${clip.startStep + 1}`}
       style={
         {

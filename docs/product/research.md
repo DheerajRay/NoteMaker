@@ -18,13 +18,13 @@ Source: https://dndkit.com/
 
 ## Beginner Reference
 
-Chrome Music Lab validates a low-account, beginner-friendly music model. NoteMaker borrows the “start making immediately” principle, not the exact visual style or implementation.
+Chrome Music Lab validates a low-account, beginner-friendly music model. NoteMaker borrows the "start making immediately" principle, not the exact visual style or implementation.
 
 Source: https://musiclab.chromeexperiments.com/About/
 
 ## Pocket Sampler Reference
 
-Teenage Engineering's PO-33 K.O! is a useful reference for compact music-making: 16-step sequencing, 16 pads/sounds, 16 patterns, pattern chaining, punch-in effects, step multiplier, and a tiny status display. NoteMaker should borrow the interaction density and “track is visibly running” feedback, while keeping original visuals and beginner-friendly labels.
+Teenage Engineering's PO-33 K.O! is a useful reference for compact music-making: 16-step sequencing, 16 pads/sounds, 16 patterns, pattern chaining, punch-in effects, step multiplier, and a tiny status display. NoteMaker should borrow the interaction density and "track is visibly running" feedback, while keeping original visuals and beginner-friendly labels.
 
 Sources: https://teenage.engineering/products/po-33 and https://teenage.engineering/guides/po-33/en
 
