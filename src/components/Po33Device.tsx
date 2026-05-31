@@ -348,7 +348,7 @@ function ToolGuide({ onClose }: { onClose: () => void }) {
         <div className="guide-grid">
           <GuideItem title="1. Pick a sound" body="Use the 16 slot pads. Slots 01-08 are melodic sounds, and 09-16 are drum sounds." />
           <GuideItem title="2. Pick a key" body="The long row of 16 keys chooses the pitch or slice that will be written into the pattern." />
-          <GuideItem title="3. Write steps" body="Turn write on, then click steps to place or remove the selected slot in the active pattern." />
+          <GuideItem title="3. Write steps" body="Turn write on, then click steps to place or remove the selected slot in the active pattern. Play is silent until events is above 0." />
           <GuideItem title="4. Shape the sound" body="Trim, tone, and filter change what knobs A and B do for the selected slot." />
           <GuideItem title="5. Switch patterns" body="The pattern bank stores separate 16-step ideas. Choose another pattern to build a different loop." />
           <GuideItem title="6. Save and import" body="Import sound loads audio into the selected slot. Export project saves the current machine state as JSON." />
@@ -422,7 +422,7 @@ const DEMO_STEPS: DemoStep[] = [
     title: "7. Play and stop",
     target: "play / stop",
     body:
-      "Play starts the pattern from step 01 and animates the LCD. Stop halts playback and returns the current step to the start.",
+      "Play starts the pattern from step 01 and animates the LCD. If events is 0, there are no written notes yet, so write a step before expecting loop sound.",
     showLabel: "Toggle transport"
   },
   {

@@ -36,6 +36,7 @@ describe("PO33 NoteMaker app", () => {
 
     expect(screen.getByRole("dialog", { name: /how notemaker works/i })).toBeInTheDocument();
     expect(screen.getByText(/turn write on, then click steps/i)).toBeInTheDocument();
+    expect(screen.getByText(/play is silent until events is above 0/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /close tool guide/i }));
 

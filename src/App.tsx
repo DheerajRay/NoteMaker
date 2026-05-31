@@ -52,6 +52,21 @@ export default function App() {
     setPlaying(true);
   }
 
+  function handleSelectSlot(slotId: number) {
+    selectSlot(slotId);
+    triggerPreview(slotId, selectedKeyIndex);
+  }
+
+  function handleSelectKey(keyIndex: number) {
+    setSelectedKey(keyIndex);
+    triggerPreview(project.activeSlotId, keyIndex);
+  }
+
+  function triggerPreview(slotId: number, keyIndex: number) {
+    if (!canUseBrowserAudio()) return;
+    void engineRef.current.triggerPreview(project, slotId, keyIndex);
+  }
+
   function handleStop() {
     engineRef.current.stop();
     setPlaying(false);
@@ -65,9 +80,9 @@ export default function App() {
       currentStep={currentStep}
       playing={playing}
       importError={importError}
-      onSelectSlot={selectSlot}
+      onSelectSlot={handleSelectSlot}
       onSelectPattern={selectPattern}
-      onSelectKey={setSelectedKey}
+      onSelectKey={handleSelectKey}
       onToggleWrite={toggleWriteMode}
       onToggleStep={toggleStep}
       onTempoChange={setTempo}
@@ -81,4 +96,9 @@ export default function App() {
       onStop={handleStop}
     />
   );
+}
+
+function canUseBrowserAudio(): boolean {
+  if (typeof window === "undefined") return false;
+  return Boolean(window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
 }
