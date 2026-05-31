@@ -145,6 +145,15 @@ h2 {
   border-radius: 18px;
 }
 
+.demo-key {
+  min-width: 72px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #e8ff7d;
+  color: #172016;
+}
+
 .help-key {
   width: 42px;
   min-width: 42px;
@@ -595,6 +604,74 @@ h2 {
   line-height: 1.35;
 }
 
+.demo-dialog {
+  width: min(820px, 100%);
+}
+
+.demo-progress {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(34px, 1fr));
+  gap: 8px;
+}
+
+.demo-progress button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.demo-progress button[aria-pressed="true"] {
+  background: #26251f;
+  color: var(--paper);
+}
+
+.demo-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(36, 26, 19, 0.35);
+  border-radius: 14px;
+  background: #fff1c8;
+}
+
+.demo-panel h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.demo-panel p:not(.device-eyebrow) {
+  color: #4a3728;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.demo-actions {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.demo-actions > span {
+  color: #4a3728;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.demo-actions > div {
+  display: flex;
+  gap: 8px;
+}
+
+.demo-actions button:disabled,
+.demo-progress button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
 @media (max-width: 920px) {
   .po33-app {
     padding: 10px;
@@ -632,6 +709,22 @@ h2 {
 
   .guide-grid {
     grid-template-columns: 1fr;
+  }
+
+  .demo-progress {
+    grid-template-columns: repeat(4, minmax(34px, 1fr));
+  }
+
+  .demo-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-actions > div {
+    width: 100%;
+  }
+
+  .demo-actions > div button {
+    flex: 1;
   }
 }
 

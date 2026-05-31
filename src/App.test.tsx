@@ -41,4 +41,21 @@ describe("PO33 NoteMaker app", () => {
 
     expect(screen.queryByRole("dialog", { name: /how notemaker works/i })).not.toBeInTheDocument();
   });
+
+  it("runs the guided button demo", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /start guided demo/i }));
+
+    expect(screen.getByRole("dialog", { name: /guided button demo/i })).toBeInTheDocument();
+    expect(screen.getByText(/slot pads are the sound bank/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /show this button/i }));
+
+    expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/slot 09 key 01 ready/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /next demo step/i }));
+
+    expect(screen.getByText(/key row chooses the pitch or slice/i)).toBeInTheDocument();
+  });
 });

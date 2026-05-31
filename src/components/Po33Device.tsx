@@ -53,10 +53,57 @@ export function Po33Device({
   const activeStep = activePattern.steps[currentStep] ?? activePattern.steps[0];
   const scheduledCount = createSchedulePlan(project).length;
   const [guideOpen, setGuideOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const [demoStepIndex, setDemoStepIndex] = useState(0);
 
   async function handleProjectImport(file: File | undefined) {
     if (!file) return;
     onImportProject(parseProject(await file.text()));
+  }
+
+  function handleDemoAction(stepId: DemoStepId) {
+    if (stepId === "slots") {
+      onSelectSlot(9);
+      if (project.writeMode) onToggleWrite();
+      return;
+    }
+
+    if (stepId === "keys") {
+      onSelectKey(5);
+      return;
+    }
+
+    if (stepId === "write") {
+      if (!project.writeMode) onToggleWrite();
+      return;
+    }
+
+    if (stepId === "steps") {
+      const demoStep = activePattern.steps[4];
+      const alreadyWritten = demoStep?.triggers.some(
+        (trigger) => trigger.slotId === 9 && trigger.keyIndex === selectedKeyIndex
+      );
+      onSelectSlot(9);
+      if (!project.writeMode) onToggleWrite();
+      if (!alreadyWritten) onToggleStep(4);
+      return;
+    }
+
+    if (stepId === "patterns") {
+      onSelectPattern(project.activePatternId === 1 ? 2 : 1);
+      return;
+    }
+
+    if (stepId === "knobs") {
+      onParamModeChange("tone");
+      onKnobChange("a", Math.min(activeSlot.pitch + 1, 24));
+      return;
+    }
+
+    if (stepId === "transport") {
+      if (playing) onStop();
+      else onPlay();
+    }
   }
 
   return (
@@ -70,6 +117,9 @@ export function Po33Device({
           <div className="transport-cluster">
             <button type="button" className="help-key" aria-label="Open tool guide" onClick={() => setGuideOpen(true)}>
               i
+            </button>
+            <button type="button" className="demo-key" aria-label="Start guided demo" onClick={() => setDemoOpen(true)}>
+              demo
             </button>
             <button type="button" className="transport-key" aria-label={playing ? "Stop playback" : "Play pattern"} onClick={playing ? onStop : onPlay}>
               {playing ? "stop" : "play"}
@@ -218,6 +268,14 @@ export function Po33Device({
           </div>
         </section>
         {guideOpen ? <ToolGuide onClose={() => setGuideOpen(false)} /> : null}
+        {demoOpen ? (
+          <GuidedButtonDemo
+            stepIndex={demoStepIndex}
+            onStepIndexChange={setDemoStepIndex}
+            onShowButton={handleDemoAction}
+            onClose={() => setDemoOpen(false)}
+          />
+        ) : null}
       </section>
     </main>
   );
@@ -294,6 +352,150 @@ function ToolGuide({ onClose }: { onClose: () => void }) {
           <GuideItem title="4. Shape the sound" body="Trim, tone, and filter change what knobs A and B do for the selected slot." />
           <GuideItem title="5. Switch patterns" body="The pattern bank stores separate 16-step ideas. Choose another pattern to build a different loop." />
           <GuideItem title="6. Save and import" body="Import sound loads audio into the selected slot. Export project saves the current machine state as JSON." />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+type DemoStepId = "slots" | "keys" | "write" | "steps" | "patterns" | "knobs" | "transport" | "files";
+
+type DemoStep = {
+  id: DemoStepId;
+  title: string;
+  target: string;
+  body: string;
+  showLabel: string;
+};
+
+const DEMO_STEPS: DemoStep[] = [
+  {
+    id: "slots",
+    title: "1. Slot pads",
+    target: "16 sound slots",
+    body:
+      "Slot pads are the sound bank. Click one pad to choose the sound you are editing or writing. Slots 01-08 act like melodic sample slots, and slots 09-16 act like drum/percussion slots.",
+    showLabel: "Select slot 09"
+  },
+  {
+    id: "keys",
+    title: "2. Key row",
+    target: "16 performance keys",
+    body:
+      "Key row chooses the pitch or slice for the selected sound. Think of it as the note/slice value that will be stored when write mode is on.",
+    showLabel: "Select key 05"
+  },
+  {
+    id: "write",
+    title: "3. Write button",
+    target: "write",
+    body:
+      "Write decides whether step buttons edit the pattern. Off means step clicks are ignored. On means each step click places or removes the selected slot and key.",
+    showLabel: "Turn write on"
+  },
+  {
+    id: "steps",
+    title: "4. Step keys",
+    target: "1-16 step sequencer",
+    body:
+      "Step keys are the timeline. With write on, click a step to place the selected sound there. A bright step contains a trigger, and the darker orange step is the current playback position.",
+    showLabel: "Write step 05"
+  },
+  {
+    id: "patterns",
+    title: "5. Pattern bank",
+    target: "pattern buttons",
+    body:
+      "Pattern buttons switch between separate 16-step loops. Use them when you want another beat idea without replacing the current one.",
+    showLabel: "Switch pattern"
+  },
+  {
+    id: "knobs",
+    title: "6. Mode and knobs",
+    target: "trim, tone, filter, A, B",
+    body:
+      "Trim, tone, and filter choose what knobs A and B control. The knobs always edit the selected slot, so pick the slot first, then shape it.",
+    showLabel: "Move tone A"
+  },
+  {
+    id: "transport",
+    title: "7. Play and stop",
+    target: "play / stop",
+    body:
+      "Play starts the pattern from step 01 and animates the LCD. Stop halts playback and returns the current step to the start.",
+    showLabel: "Toggle transport"
+  },
+  {
+    id: "files",
+    title: "8. Import and export",
+    target: "import sound / project",
+    body:
+      "Import sound loads an audio file into the selected slot. Import project restores a saved JSON machine state. Export project downloads the current slots, patterns, tempo, and chain.",
+    showLabel: "Review file buttons"
+  }
+];
+
+function GuidedButtonDemo({
+  stepIndex,
+  onStepIndexChange,
+  onShowButton,
+  onClose
+}: {
+  stepIndex: number;
+  onStepIndexChange: (stepIndex: number) => void;
+  onShowButton: (stepId: DemoStepId) => void;
+  onClose: () => void;
+}) {
+  const step = DEMO_STEPS[stepIndex] ?? DEMO_STEPS[0];
+  const isFirst = stepIndex === 0;
+  const isLast = stepIndex === DEMO_STEPS.length - 1;
+
+  return (
+    <div className="guide-backdrop">
+      <section className="guide-dialog demo-dialog" role="dialog" aria-modal="true" aria-labelledby="guided-demo-title">
+        <div className="guide-header">
+          <div>
+            <p className="device-eyebrow">button by button</p>
+            <h2 id="guided-demo-title">Guided Button Demo</h2>
+          </div>
+          <button type="button" className="help-key" aria-label="Close guided demo" onClick={onClose}>
+            x
+          </button>
+        </div>
+
+        <div className="demo-progress" aria-label="Demo progress">
+          {DEMO_STEPS.map((candidate, index) => (
+            <button
+              type="button"
+              key={candidate.id}
+              aria-label={`Demo step ${index + 1}: ${candidate.title}`}
+              aria-pressed={index === stepIndex}
+              onClick={() => onStepIndexChange(index)}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+
+        <article className="demo-panel">
+          <p className="device-eyebrow">look at: {step.target}</p>
+          <h3>{step.title}</h3>
+          <p>{step.body}</p>
+        </article>
+
+        <div className="demo-actions">
+          <button type="button" className="transport-key" onClick={() => onShowButton(step.id)}>
+            Show this button
+          </button>
+          <span>{step.showLabel}</span>
+          <div>
+            <button type="button" disabled={isFirst} aria-label="Previous demo step" onClick={() => onStepIndexChange(stepIndex - 1)}>
+              prev
+            </button>
+            <button type="button" disabled={isLast} aria-label="Next demo step" onClick={() => onStepIndexChange(stepIndex + 1)}>
+              next
+            </button>
+          </div>
         </div>
       </section>
     </div>
