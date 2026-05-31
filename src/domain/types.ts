@@ -1,49 +1,65 @@
-export const PROJECT_VERSION = "notemaker.project.v1" as const;
+export const PROJECT_VERSION = "notemaker.po33.v1" as const;
 
 export type ProjectVersion = typeof PROJECT_VERSION;
 
-export type InstrumentId = "drum-kit" | "bass" | "keys" | "bells" | "pluck" | "pad";
+export type SlotType = "melodic" | "drum";
 
-export type InstrumentPreset = {
-  id: InstrumentId;
+export type ParamMode = "trim" | "tone" | "filter";
+
+export type SampleSourceType = "starter" | "imported";
+
+export type SampleAsset = {
+  id: string;
   name: string;
-  shortName: string;
-  description: string;
-  color: string;
-  sounds: string[];
+  sourceType: SampleSourceType;
+  durationSeconds: number;
+  url?: string;
+  originalFileName?: string;
 };
 
-export type LoopRange = {
-  startStep: number;
-  endStep: number;
-  enabled: boolean;
+export type SliceSetting = {
+  keyIndex: number;
+  trimStart: number;
+  trimEnd: number;
 };
 
-export type StepEvent = {
-  step: number;
-  sound: string;
+export type SoundSlot = {
+  id: number;
+  type: SlotType;
+  name: string;
+  sample: SampleAsset | null;
+  trimStart: number;
+  trimEnd: number;
+  gain: number;
+  pitch: number;
+  filter: number;
+  resonance: number;
+  slices: SliceSetting[];
+};
+
+export type StepTrigger = {
+  slotId: number;
+  keyIndex: number;
   velocity: number;
-  durationSteps: number;
   probability?: number;
 };
 
-export type PatternClip = {
-  id: string;
-  trackId: string;
-  startStep: number;
-  lengthSteps: number;
-  repeat: number;
-  events: StepEvent[];
+export type LockedParams = Partial<Pick<SoundSlot, "trimStart" | "trimEnd" | "gain" | "pitch" | "filter" | "resonance">>;
+
+export type PatternStep = {
+  index: number;
+  triggers: StepTrigger[];
+  lockedParams?: Record<number, LockedParams>;
+  fx?: string;
 };
 
-export type InstrumentTrack = {
-  id: string;
-  name: string;
-  instrumentId: InstrumentId;
-  volume: number;
-  pan: number;
-  muted: boolean;
-  solo: boolean;
+export type Pattern = {
+  id: number;
+  steps: PatternStep[];
+};
+
+export type PatternChain = {
+  patternIds: number[];
 };
 
 export type Project = {
@@ -53,18 +69,12 @@ export type Project = {
   createdAt: string;
   updatedAt: string;
   tempo: number;
-  steps: number;
-  loop: LoopRange;
-  tracks: InstrumentTrack[];
-  clips: PatternClip[];
-};
-
-export type ScheduledEvent = {
-  clipId: string;
-  trackId: string;
-  instrumentId: InstrumentId;
-  sound: string;
-  step: number;
-  durationSteps: number;
-  velocity: number;
+  activePatternId: number;
+  activeSlotId: number;
+  writeMode: boolean;
+  paramMode: ParamMode;
+  memoryLimitSeconds: number;
+  slots: SoundSlot[];
+  patterns: Pattern[];
+  chain: PatternChain;
 };

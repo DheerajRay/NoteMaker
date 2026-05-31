@@ -1,30 +1,28 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
 
-describe("NoteMaker app shell", () => {
-  it("renders the pocket operator inspired sequencer workspace", () => {
+describe("PO33 NoteMaker app", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("renders the PO33-style device surface", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: /notemaker/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /play song/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/tempo/i)).toHaveValue(112);
-    expect(screen.getByRole("grid", { name: /pocket session timeline/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /01 kick drums/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /pocket performance deck/i })).toBeInTheDocument();
-    expect(screen.getByLabelText("Step 1 is active")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /pattern 1/i })).toBeInTheDocument();
-    expect(screen.getByText(/punch-in fx/i)).toBeInTheDocument();
-    expect(screen.queryByText(/instrument palette/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/song inspector/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/pattern 01/i);
+    expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("grid", { name: /timeline/i })).not.toBeInTheDocument();
   });
 
-  it("places a selected pad sound onto the sequence grid", () => {
+  it("selects a slot and writes a step", () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: /04 c2 bass/i }));
-    fireEvent.click(screen.getAllByRole("gridcell", { name: "Step 18" })[1]);
+    fireEvent.click(screen.getByRole("button", { name: /slot 09/i }));
+    fireEvent.click(screen.getByRole("button", { name: /write mode/i }));
+    fireEvent.click(screen.getByRole("button", { name: /step 05/i }));
 
-    expect(screen.getByRole("button", { name: /Bumble Bass clip at step 18/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
+    expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
   });
 });

@@ -1,7 +1,25 @@
-import type { Project, ScheduledEvent } from "./types";
+import type { Project } from "./types";
 
+export const STEPS_PER_PATTERN = 16;
 export const STEPS_PER_BAR = 4;
-export const SIXTEENTH_NOTES_PER_STEP = 1;
+
+export type SchedulePlanEntry = {
+  patternId: number;
+  stepIndex: number;
+  slotId: number;
+  keyIndex: number;
+  sampleId: string;
+  sampleName: string;
+  toneTime: string;
+  seconds: number;
+  durationSeconds: number;
+  trimStart: number;
+  trimEnd: number;
+  gain: number;
+  playbackRate: number;
+  filter: number;
+  resonance: number;
+};
 
 export function stepToToneTime(step: number): string {
   const bar = Math.floor(step / STEPS_PER_BAR);
@@ -10,50 +28,36 @@ export function stepToToneTime(step: number): string {
 }
 
 export function stepToSeconds(step: number, tempo: number): number {
-  const secondsPerBeat = 60 / tempo;
-  return step * secondsPerBeat * SIXTEENTH_NOTES_PER_STEP;
+  const secondsPerStep = 60 / tempo;
+  return step * secondsPerStep;
 }
 
-export function quantizeStep(step: number, totalSteps: number): number {
-  return Math.min(Math.max(Math.round(step), 0), totalSteps - 1);
-}
+export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
+  const pattern = project.patterns.find((candidate) => candidate.id === project.activePatternId);
+  if (!pattern) return [];
 
-export function expandProjectEvents(project: Project): ScheduledEvent[] {
-  const audibleTracks = getAudibleTracks(project);
-  const tracksById = new Map(audibleTracks.map((track) => [track.id, track]));
-  const trackOrder = new Map(project.tracks.map((track, index) => [track.id, index]));
-  const events: ScheduledEvent[] = [];
-
-  for (const clip of project.clips) {
-    const track = tracksById.get(clip.trackId);
-    if (!track) continue;
-
-    for (let cycle = 0; cycle < Math.max(clip.repeat, 1); cycle += 1) {
-      const cycleOffset = clip.startStep + cycle * clip.lengthSteps;
-      for (const event of clip.events) {
-        const step = cycleOffset + event.step;
-        if (step >= project.steps) continue;
-        if (project.loop.enabled && (step < project.loop.startStep || step >= project.loop.endStep)) continue;
-        events.push({
-          clipId: clip.id,
-          trackId: track.id,
-          instrumentId: track.instrumentId,
-          sound: event.sound,
-          step,
-          durationSteps: event.durationSteps,
-          velocity: event.velocity
-        });
-      }
-    }
-  }
-
-  return events.sort(
-    (a, b) => a.step - b.step || (trackOrder.get(a.trackId) ?? 0) - (trackOrder.get(b.trackId) ?? 0)
-  );
-}
-
-function getAudibleTracks(project: Project) {
-  const soloed = project.tracks.filter((track) => track.solo);
-  if (soloed.length > 0) return soloed.filter((track) => !track.muted);
-  return project.tracks.filter((track) => !track.muted);
+  return pattern.steps.flatMap((step) =>
+    step.triggers.flatMap((trigger) => {
+      const slot = project.slots.find((candidate) => candidate.id === trigger.slotId);
+      if (!slot?.sample) return [];
+      const trimSpan = Math.max(slot.trimEnd - slot.trimStart, 0.01);
+      return {
+        patternId: pattern.id,
+        stepIndex: step.index,
+        slotId: slot.id,
+        keyIndex: trigger.keyIndex,
+        sampleId: slot.sample.id,
+        sampleName: slot.sample.name,
+        toneTime: stepToToneTime(step.index),
+        seconds: stepToSeconds(step.index, project.tempo),
+        durationSeconds: Math.max(slot.sample.durationSeconds * trimSpan, 0.05),
+        trimStart: slot.trimStart,
+        trimEnd: slot.trimEnd,
+        gain: slot.gain * trigger.velocity,
+        playbackRate: 2 ** (slot.pitch / 12),
+        filter: slot.filter,
+        resonance: slot.resonance
+      };
+    })
+  ).sort((a, b) => a.stepIndex - b.stepIndex || a.slotId - b.slotId || a.keyIndex - b.keyIndex);
 }

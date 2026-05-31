@@ -1,24 +1,31 @@
 import { create } from "zustand";
-import { createStarterEvents } from "../domain/instruments";
-import { createDefaultProject, createId, loadProjectFromStorage, saveProjectToStorage } from "../domain/project";
-import { quantizeStep } from "../domain/sequencer";
-import type { InstrumentId, PatternClip, Project } from "../domain/types";
+import {
+  createDefaultProject,
+  createId,
+  loadProjectFromStorage,
+  replaceSlotSample,
+  saveProjectToStorage,
+  selectPattern,
+  selectSlot,
+  setProjectTempo,
+  toggleStepTrigger,
+  updateSlotParams
+} from "../domain/project";
+import type { ParamMode, Project } from "../domain/types";
 
 type ProjectState = {
   project: Project;
-  selectedInstrumentId: InstrumentId;
-  setSelectedInstrument: (instrumentId: InstrumentId) => void;
+  selectedKeyIndex: number;
+  importError: string | null;
+  selectSlot: (slotId: number) => void;
+  selectPattern: (patternId: number) => void;
+  setSelectedKey: (keyIndex: number) => void;
+  toggleWriteMode: () => void;
+  toggleStep: (stepIndex: number) => void;
   setTempo: (tempo: number) => void;
-  setLoopEnabled: (enabled: boolean) => void;
-  setLoopRange: (startStep: number, endStep: number) => void;
-  addClip: (trackId: string, instrumentId: InstrumentId, startStep: number) => void;
-  moveClip: (clipId: string, trackId: string, startStep: number) => void;
-  resizeClip: (clipId: string, deltaSteps: number) => void;
-  duplicateClip: (clipId: string) => void;
-  removeClip: (clipId: string) => void;
-  toggleRepeat: (clipId: string) => void;
-  toggleMute: (trackId: string) => void;
-  toggleSolo: (trackId: string) => void;
+  setParamMode: (mode: ParamMode) => void;
+  setKnobValue: (knob: "a" | "b", value: number) => void;
+  importSampleFile: (file: File | undefined) => void;
   importProject: (project: Project) => void;
   resetProject: () => void;
 };
@@ -27,129 +34,90 @@ const loadedProject = typeof window !== "undefined" ? loadProjectFromStorage() :
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
   project: loadedProject ?? createDefaultProject(),
-  selectedInstrumentId: "drum-kit",
+  selectedKeyIndex: 1,
+  importError: null,
 
-  setSelectedInstrument: (instrumentId) => set({ selectedInstrumentId: instrumentId }),
+  selectSlot: (slotId) => updateProject(set, (project) => selectSlot(project, slotId)),
 
-  setTempo: (tempo) =>
+  selectPattern: (patternId) => updateProject(set, (project) => selectPattern(project, patternId)),
+
+  setSelectedKey: (keyIndex) => set({ selectedKeyIndex: Math.min(Math.max(Math.round(keyIndex), 1), 16) }),
+
+  toggleWriteMode: () =>
     updateProject(set, (project) => ({
       ...project,
-      tempo: Math.min(Math.max(Math.round(tempo), 60), 180)
+      writeMode: !project.writeMode
     })),
 
-  setLoopEnabled: (enabled) =>
+  toggleStep: (stepIndex) => {
+    const { project, selectedKeyIndex } = get();
+    if (!project.writeMode) return;
+    updateProject(set, () => toggleStepTrigger(project, stepIndex, project.activeSlotId, selectedKeyIndex));
+  },
+
+  setTempo: (tempo) => updateProject(set, (project) => setProjectTempo(project, tempo)),
+
+  setParamMode: (mode) =>
     updateProject(set, (project) => ({
       ...project,
-      loop: { ...project.loop, enabled }
+      paramMode: mode
     })),
 
-  setLoopRange: (startStep, endStep) =>
-    updateProject(set, (project) => ({
-      ...project,
-      loop: {
-        ...project.loop,
-        startStep: quantizeStep(startStep, project.steps),
-        endStep: Math.min(Math.max(endStep, startStep + 1), project.steps)
-      }
-    })),
+  setKnobValue: (knob, value) => {
+    const { project } = get();
+    const slot = project.slots.find((candidate) => candidate.id === project.activeSlotId);
+    if (!slot) return;
+    const params =
+      project.paramMode === "trim"
+        ? knob === "a"
+          ? { trimStart: value }
+          : { trimEnd: value }
+        : project.paramMode === "tone"
+          ? knob === "a"
+            ? { pitch: value }
+            : { gain: value }
+          : knob === "a"
+            ? { filter: value }
+            : { resonance: value };
+    updateProject(set, () => updateSlotParams(project, slot.id, params));
+  },
 
-  addClip: (trackId, instrumentId, startStep) =>
-    updateProject(set, (project) => {
-      const track = project.tracks.find((candidate) => candidate.id === trackId);
-      const clipInstrument = track?.instrumentId ?? instrumentId;
-      const clip: PatternClip = {
-        id: createId("clip"),
-        trackId,
-        startStep: quantizeStep(startStep, project.steps),
-        lengthSteps: clipInstrument === "pad" ? 8 : 4,
-        repeat: 1,
-        events: createStarterEvents(clipInstrument)
-      };
-      return { ...project, clips: [...project.clips, clip] };
-    }),
-
-  moveClip: (clipId, trackId, startStep) =>
-    updateProject(set, (project) => ({
-      ...project,
-      clips: project.clips.map((clip) =>
-        clip.id === clipId
-          ? { ...clip, trackId, startStep: quantizeStep(startStep, project.steps) }
-          : clip
-      )
-    })),
-
-  resizeClip: (clipId, deltaSteps) =>
-    updateProject(set, (project) => ({
-      ...project,
-      clips: project.clips.map((clip) =>
-        clip.id === clipId
-          ? { ...clip, lengthSteps: Math.min(Math.max(clip.lengthSteps + deltaSteps, 2), project.steps) }
-          : clip
-      )
-    })),
-
-  duplicateClip: (clipId) =>
-    updateProject(set, (project) => {
-      const source = project.clips.find((clip) => clip.id === clipId);
-      if (!source) return project;
-      return {
-        ...project,
-        clips: [
-          ...project.clips,
-          {
-            ...source,
-            id: createId("clip"),
-            startStep: quantizeStep(source.startStep + source.lengthSteps, project.steps)
-          }
-        ]
-      };
-    }),
-
-  removeClip: (clipId) =>
-    updateProject(set, (project) => ({
-      ...project,
-      clips: project.clips.filter((clip) => clip.id !== clipId)
-    })),
-
-  toggleRepeat: (clipId) =>
-    updateProject(set, (project) => ({
-      ...project,
-      clips: project.clips.map((clip) =>
-        clip.id === clipId ? { ...clip, repeat: clip.repeat >= 4 ? 1 : clip.repeat + 1 } : clip
-      )
-    })),
-
-  toggleMute: (trackId) =>
-    updateProject(set, (project) => ({
-      ...project,
-      tracks: project.tracks.map((track) =>
-        track.id === trackId ? { ...track, muted: !track.muted } : track
-      )
-    })),
-
-  toggleSolo: (trackId) =>
-    updateProject(set, (project) => ({
-      ...project,
-      tracks: project.tracks.map((track) =>
-        track.id === trackId ? { ...track, solo: !track.solo } : track
-      )
-    })),
+  importSampleFile: (file) => {
+    if (!file) return;
+    const { project } = get();
+    if (!file.type.startsWith("audio/")) {
+      set({ importError: "Choose an audio file for this slot." });
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    const name = file.name.replace(/\.[^.]+$/, "") || "Imported Sound";
+    const next = replaceSlotSample(project, project.activeSlotId, {
+      id: createId("sample"),
+      name,
+      sourceType: "imported",
+      durationSeconds: 1,
+      url: objectUrl,
+      originalFileName: file.name
+    });
+    saveProjectToStorage(next);
+    set({ project: next, importError: null });
+  },
 
   importProject: (project) => {
     saveProjectToStorage(project);
-    set({ project });
+    set({ project, importError: null });
   },
 
   resetProject: () => {
     const project = createDefaultProject();
     saveProjectToStorage(project);
-    set({ project, selectedInstrumentId: "drum-kit" });
+    set({ project, selectedKeyIndex: 1, importError: null });
   }
 }));
 
 function updateProject(set: (partial: Partial<ProjectState>) => void, updater: (project: Project) => Project) {
   const current = useProjectStore.getState().project;
-  const next = { ...updater(current), updatedAt: new Date().toISOString() };
+  const next = updater(current);
   saveProjectToStorage(next);
   set({ project: next });
 }
