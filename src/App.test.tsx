@@ -26,4 +26,17 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
     expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
   });
+
+  it("opens and closes the tool guide dialog", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /open tool guide/i }));
+
+    expect(screen.getByRole("dialog", { name: /how notemaker works/i })).toBeInTheDocument();
+    expect(screen.getByText(/turn write on, then click steps/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /close tool guide/i }));
+
+    expect(screen.queryByRole("dialog", { name: /how notemaker works/i })).not.toBeInTheDocument();
+  });
 });

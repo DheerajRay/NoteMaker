@@ -145,6 +145,19 @@ h2 {
   border-radius: 18px;
 }
 
+.help-key {
+  width: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 999px;
+  background: #fff1c8;
+  color: #2a2018;
+  font-size: 1.1rem;
+}
+
 .lcd {
   min-height: 92px;
   display: grid;
@@ -459,6 +472,67 @@ h2 {
   color: #8f1f17 !important;
 }
 
+.guide-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(10, 9, 8, 0.66);
+}
+
+.guide-dialog {
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100vh - 36px));
+  overflow: auto;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 2px solid #15110d;
+  border-radius: 18px;
+  background: #ffd9a6;
+  color: #241a13;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.48), inset 0 0 0 5px rgba(255, 255, 255, 0.18);
+}
+
+.guide-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.guide-grid article {
+  min-height: 118px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(36, 26, 19, 0.35);
+  border-radius: 14px;
+  background: #fff1c8;
+}
+
+.guide-grid h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.guide-grid p {
+  color: #4a3728;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 @media (max-width: 920px) {
   .po33-app {
     padding: 10px;
@@ -484,6 +558,10 @@ h2 {
 
   .key-bank {
     grid-template-columns: repeat(8, minmax(34px, 1fr));
+  }
+
+  .guide-grid {
+    grid-template-columns: 1fr;
   }
 }
 

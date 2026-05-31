@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { parseProject } from "../domain/project";
 import { createSchedulePlan } from "../domain/sequencer";
 import type { ParamMode, Project, SoundSlot } from "../domain/types";
@@ -51,6 +52,7 @@ export function Po33Device({
   const activePattern = project.patterns.find((pattern) => pattern.id === project.activePatternId) ?? project.patterns[0];
   const activeStep = activePattern.steps[currentStep] ?? activePattern.steps[0];
   const scheduledCount = createSchedulePlan(project).length;
+  const [guideOpen, setGuideOpen] = useState(false);
 
   async function handleProjectImport(file: File | undefined) {
     if (!file) return;
@@ -66,6 +68,9 @@ export function Po33Device({
             <h1>NoteMaker</h1>
           </div>
           <div className="transport-cluster">
+            <button type="button" className="help-key" aria-label="Open tool guide" onClick={() => setGuideOpen(true)}>
+              i
+            </button>
             <button type="button" className="transport-key" aria-label={playing ? "Stop playback" : "Play pattern"} onClick={playing ? onStop : onPlay}>
               {playing ? "stop" : "play"}
             </button>
@@ -200,8 +205,44 @@ export function Po33Device({
             </label>
           </div>
         </section>
+        {guideOpen ? <ToolGuide onClose={() => setGuideOpen(false)} /> : null}
       </section>
     </main>
+  );
+}
+
+function ToolGuide({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="guide-backdrop">
+      <section className="guide-dialog" role="dialog" aria-modal="true" aria-labelledby="tool-guide-title">
+        <div className="guide-header">
+          <div>
+            <p className="device-eyebrow">quick guide</p>
+            <h2 id="tool-guide-title">How NoteMaker Works</h2>
+          </div>
+          <button type="button" className="help-key" aria-label="Close tool guide" onClick={onClose}>
+            x
+          </button>
+        </div>
+        <div className="guide-grid">
+          <GuideItem title="1. Pick a sound" body="Use the 16 slot pads. Slots 01-08 are melodic sounds, and 09-16 are drum sounds." />
+          <GuideItem title="2. Pick a key" body="The long row of 16 keys chooses the pitch or slice that will be written into the pattern." />
+          <GuideItem title="3. Write steps" body="Turn write on, then click steps to place or remove the selected slot in the active pattern." />
+          <GuideItem title="4. Shape the sound" body="Trim, tone, and filter change what knobs A and B do for the selected slot." />
+          <GuideItem title="5. Switch patterns" body="The pattern bank stores separate 16-step ideas. Choose another pattern to build a different loop." />
+          <GuideItem title="6. Save and import" body="Import sound loads audio into the selected slot. Export project saves the current machine state as JSON." />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function GuideItem({ title, body }: { title: string; body: string }) {
+  return (
+    <article>
+      <h3>{title}</h3>
+      <p>{body}</p>
+    </article>
   );
 }
 
