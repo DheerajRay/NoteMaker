@@ -261,10 +261,7 @@ export function Po33Device({
             <button type="button" onClick={onExportProject}>
               export project
             </button>
-            <label className="tempo-control">
-              bpm
-              <input type="number" min={60} max={240} value={project.tempo} onChange={(event) => onTempoChange(Number(event.target.value))} />
-            </label>
+            <TempoControl tempo={project.tempo} onTempoChange={onTempoChange} />
           </div>
         </section>
         {guideOpen ? <ToolGuide onClose={() => setGuideOpen(false)} /> : null}
@@ -565,6 +562,51 @@ function Knob({ slot, knob, mode, onChange }: { slot: SoundSlot; knob: "a" | "b"
       />
     </label>
   );
+}
+
+function TempoControl({ tempo, onTempoChange }: { tempo: number; onTempoChange: (tempo: number) => void }) {
+  const classification = getTempoClassification(tempo);
+  const meterPosition = `${((tempo - 60) / 180) * 100}%`;
+
+  return (
+    <div className="tempo-module" aria-label="Tempo control">
+      <div className="tempo-topline">
+        <span>bpm</span>
+        <strong>{tempo}</strong>
+      </div>
+      <label>
+        <span className="sr-only">BPM</span>
+        <input
+          type="range"
+          min={60}
+          max={240}
+          value={tempo}
+          aria-label="BPM"
+          onChange={(event) => onTempoChange(Number(event.target.value))}
+        />
+      </label>
+      <div className="tempo-meter" aria-hidden="true">
+        <span style={{ left: meterPosition }} />
+      </div>
+      <div className="tempo-scale" aria-hidden="true">
+        <span>low</span>
+        <span>mid</span>
+        <span>high</span>
+      </div>
+      <p className="tempo-classification">
+        <strong>{classification.label}</strong>
+        {classification.description}
+      </p>
+    </div>
+  );
+}
+
+function getTempoClassification(tempo: number): { label: string; description: string } {
+  if (tempo < 80) return { label: "Slow", description: " heavy, spacious timing" };
+  if (tempo < 110) return { label: "Laid back", description: " relaxed pocket for slower loops" };
+  if (tempo < 130) return { label: "Groove", description: " balanced beat-making range" };
+  if (tempo < 160) return { label: "Fast", description: " energetic, dance-leaning pace" };
+  return { label: "Very fast", description: " tight, rapid sequencing" };
 }
 
 function format2(value: number): string {

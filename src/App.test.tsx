@@ -12,6 +12,8 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/pattern 01/i);
     expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/slot 01 key 01 ready/i);
     expect(screen.getByLabelText(/8-bit sample animation/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/groove/i);
+    expect(screen.getByLabelText(/bpm/i)).toHaveValue("112");
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("grid", { name: /timeline/i })).not.toBeInTheDocument();
