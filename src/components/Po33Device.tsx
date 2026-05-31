@@ -77,6 +77,7 @@ export function Po33Device({
 
         <section className="lcd" aria-label="LCD status">
           <span className={`run-light ${playing ? "is-on" : ""}`} aria-hidden="true" />
+          <PixelSampler playing={playing} stepIndex={activeStep.index} />
           <LcdCell label="pattern" value={format2(project.activePatternId)} />
           <LcdCell label="slot" value={format2(project.activeSlotId)} />
           <LcdCell label="step" value={format2(currentStep + 1)} />
@@ -201,6 +202,24 @@ export function Po33Device({
         </section>
       </section>
     </main>
+  );
+}
+
+function PixelSampler({ playing, stepIndex }: { playing: boolean; stepIndex: number }) {
+  return (
+    <div
+      className={`pixel-sampler ${playing ? "is-playing" : ""}`}
+      aria-label="8-bit sample animation"
+      role="img"
+      style={{ "--pixel-step": stepIndex } as React.CSSProperties}
+    >
+      <span className="pixel-row pixel-row-top" />
+      <span className="pixel-row pixel-row-mid" />
+      <span className="pixel-row pixel-row-low" />
+      <span className="pixel-eye pixel-eye-left" />
+      <span className="pixel-eye pixel-eye-right" />
+      <span className="pixel-meter" />
+    </div>
   );
 }
 

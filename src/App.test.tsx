@@ -10,6 +10,7 @@ describe("PO33 NoteMaker app", () => {
 
     expect(screen.getByRole("heading", { name: /notemaker/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/pattern 01/i);
+    expect(screen.getByLabelText(/8-bit sample animation/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("grid", { name: /timeline/i })).not.toBeInTheDocument();
