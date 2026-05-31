@@ -10,6 +10,7 @@ describe("PO33 NoteMaker app", () => {
 
     expect(screen.getByRole("heading", { name: /notemaker/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/pattern 01/i);
+    expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/slot 01 key 01 ready/i);
     expect(screen.getByLabelText(/8-bit sample animation/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
@@ -24,6 +25,7 @@ describe("PO33 NoteMaker app", () => {
     fireEvent.click(screen.getByRole("button", { name: /step 05/i }));
 
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
+    expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/write slot 09 key 01 step 05/i);
     expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
   });
 

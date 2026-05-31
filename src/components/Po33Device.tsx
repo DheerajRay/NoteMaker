@@ -81,6 +81,18 @@ export function Po33Device({
         </header>
 
         <section className="lcd" aria-label="LCD status">
+          <ActionAnimationBar
+            actionText={getActionText({
+              activePattern,
+              activeSlotId: project.activeSlotId,
+              currentStep,
+              playing,
+              selectedKeyIndex,
+              writeMode: project.writeMode
+            })}
+            activeStepIndex={currentStep}
+            activeSlotId={project.activeSlotId}
+          />
           <span className={`run-light ${playing ? "is-on" : ""}`} aria-hidden="true" />
           <PixelSampler playing={playing} stepIndex={activeStep.index} />
           <LcdCell label="pattern" value={format2(project.activePatternId)} />
@@ -209,6 +221,57 @@ export function Po33Device({
       </section>
     </main>
   );
+}
+
+function ActionAnimationBar({
+  actionText,
+  activeStepIndex,
+  activeSlotId
+}: {
+  actionText: string;
+  activeStepIndex: number;
+  activeSlotId: number;
+}) {
+  return (
+    <div className="lcd-action-bar" aria-label="LCD action animation">
+      <div className="action-pixels" key={actionText} aria-hidden="true">
+        {Array.from({ length: 16 }, (_, index) => (
+          <span
+            key={index}
+            className={index === activeStepIndex ? "is-active" : ""}
+            style={{ "--pixel-height": `${8 + ((index + activeSlotId) % 5) * 3}px` } as React.CSSProperties}
+          />
+        ))}
+      </div>
+      <strong>{actionText}</strong>
+    </div>
+  );
+}
+
+function getActionText({
+  activePattern,
+  activeSlotId,
+  currentStep,
+  playing,
+  selectedKeyIndex,
+  writeMode
+}: {
+  activePattern: Project["patterns"][number];
+  activeSlotId: number;
+  currentStep: number;
+  playing: boolean;
+  selectedKeyIndex: number;
+  writeMode: boolean;
+}): string {
+  const writtenStep = activePattern.steps.find((step) =>
+    step.triggers.some((trigger) => trigger.slotId === activeSlotId && trigger.keyIndex === selectedKeyIndex)
+  );
+  if (playing) return `play slot ${format2(activeSlotId)} step ${format2(currentStep + 1)}`;
+  if (writeMode && writtenStep) {
+    return `write slot ${format2(activeSlotId)} key ${format2(selectedKeyIndex)} step ${format2(writtenStep.index + 1)}`;
+  }
+  if (writeMode) return `write slot ${format2(activeSlotId)} key ${format2(selectedKeyIndex)}`;
+  return `slot ${format2(activeSlotId)} key ${format2(selectedKeyIndex)} ready`;
 }
 
 function ToolGuide({ onClose }: { onClose: () => void }) {

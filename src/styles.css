@@ -159,16 +159,66 @@ h2 {
 }
 
 .lcd {
-  min-height: 92px;
+  min-height: 116px;
   display: grid;
   grid-template-columns: 20px 78px repeat(6, minmax(78px, 1fr));
-  gap: 10px;
+  gap: 8px 10px;
   align-items: center;
   padding: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.18)), #2f4237;
   color: #e4ffd0;
   font-family: "Courier New", ui-monospace, monospace;
   box-shadow: inset 0 5px 22px rgba(0, 0, 0, 0.45);
+}
+
+.lcd-action-bar {
+  grid-column: 1 / -1;
+  min-height: 26px;
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid rgba(223, 255, 240, 0.18);
+  border-radius: 8px;
+  background: rgba(16, 24, 19, 0.56);
+  overflow: hidden;
+}
+
+.lcd-action-bar strong {
+  margin: 0;
+  color: #e8ff7d;
+  font-size: 0.78rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.action-pixels {
+  height: 18px;
+  display: grid;
+  grid-template-columns: repeat(16, minmax(4px, 1fr));
+  gap: 4px;
+  align-items: end;
+}
+
+.action-pixels span {
+  width: 100%;
+  height: var(--pixel-height);
+  display: block;
+  border-radius: 1px;
+  background: #8ddb83;
+  opacity: 0.72;
+  animation: action-pixel-rise 0.42s steps(2, end);
+}
+
+.action-pixels span:nth-child(3n) {
+  background: #dffff0;
+}
+
+.action-pixels span.is-active {
+  background: #e8ff7d;
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(232, 255, 125, 0.64);
 }
 
 .lcd span {
@@ -461,6 +511,18 @@ h2 {
   }
 }
 
+@keyframes action-pixel-rise {
+  0% {
+    transform: translateY(8px);
+    opacity: 0.28;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .file-control input {
   position: absolute;
   inset: 0;
@@ -550,6 +612,14 @@ h2 {
 
   .lcd {
     grid-template-columns: 22px 70px repeat(3, minmax(0, 1fr));
+  }
+
+  .lcd-action-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .lcd-action-bar strong {
+    white-space: normal;
   }
 
   .slot-bank {
