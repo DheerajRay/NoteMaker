@@ -374,31 +374,55 @@ h2 {
 
 .flow-panel {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px 12px 12px;
   background: rgba(22, 22, 18, 0.16);
 }
 
-.current-action {
+.flow-header {
   display: grid;
-  gap: 5px;
-  padding: 12px;
-  border: 1px solid rgba(21, 17, 13, 0.44);
-  border-radius: 14px;
-  background: #fff1c8;
+  grid-template-columns: minmax(210px, auto) 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.current-action {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(21, 17, 13, 0.5);
+  border-radius: 999px;
+  background: rgba(255, 241, 200, 0.74);
   color: #241a13;
 }
 
 .current-action strong {
+  font-size: 0.78rem;
   line-height: 1.15;
   text-transform: uppercase;
 }
 
-.current-action span,
+.current-action span:not(.status-dot),
 .empty-pattern-hint {
   color: #4a3728;
   font-weight: 800;
   line-height: 1.35;
+}
+
+.current-action span:not(.status-dot) {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #e8ff7d;
+  box-shadow: 0 0 10px rgba(232, 255, 125, 0.65);
 }
 
 .beat-flow-strip {
@@ -483,10 +507,11 @@ h2 {
 }
 
 .empty-pattern-hint {
-  padding: 10px 12px;
+  padding: 7px 10px;
   border: 1px dashed rgba(21, 17, 13, 0.54);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffd9a6;
+  font-size: 0.82rem;
 }
 
 .machine-grid {
@@ -938,6 +963,16 @@ h2 {
 
   .beat-flow-strip {
     grid-template-columns: repeat(8, minmax(34px, 1fr));
+  }
+
+  .flow-header {
+    grid-template-columns: 1fr;
+  }
+
+  .current-action {
+    align-items: start;
+    border-radius: 12px;
+    flex-wrap: wrap;
   }
 
   .flow-step {

@@ -160,15 +160,17 @@ export function Po33Device({
         </section>
 
         <section className="flow-panel" aria-label="Beat flow overview">
-          <ControlLabel
-            index="1"
-            title="Beat flow"
-            body="visual only: shows what is already written in the loop"
-          />
-          <div className="current-action" aria-label="Current action">
-            <p className="device-eyebrow">current action</p>
-            <strong>{actionHint.title}</strong>
-            <span>{actionHint.body}</span>
+          <div className="flow-header">
+            <ControlLabel
+              index="1"
+              title="Beat flow"
+              body="loop overview"
+            />
+            <div className="current-action" aria-label="Current action">
+              <span className="status-dot" aria-hidden="true" />
+              <strong>{actionHint.title}</strong>
+              <span>{actionHint.body}</span>
+            </div>
           </div>
           <BeatFlowStrip
             currentStep={currentStep}
@@ -403,19 +405,19 @@ function getActionHint({
   const selected = `Slot ${format2(activeSlot.id)} ${activeSlot.name} + Key ${format2(selectedKeyIndex)}`;
   if (writeMode) {
     return {
-      title: `${selected}. Write is on.`,
-      body: "Click a step below to place or remove this sound in the loop."
+      title: selected,
+      body: "Write on: click a step to place/remove."
     };
   }
   if (scheduledCount === 0) {
     return {
-      title: `${selected}. Ready to audition.`,
-      body: "You can hear keys now, but play needs written steps before the loop makes sound."
+      title: selected,
+      body: "Audition keys. Write steps before play."
     };
   }
   return {
-    title: `${selected}. Write is off.`,
-    body: "Click keys to audition sounds, or turn write on to change the loop."
+    title: selected,
+    body: "Write off: keys audition, steps stay unchanged."
   };
 }
 

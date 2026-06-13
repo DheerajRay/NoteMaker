@@ -184,7 +184,7 @@ export class NoteMakerAudioEngine {
       return;
     }
     if (slot.id === 4) {
-      this.pluckSynth?.triggerAttackRelease(note, time, velocity * 0.85);
+      this.pluckSynth?.triggerAttack(note, time);
       return;
     }
     if (slot.id === 5) {
@@ -197,7 +197,7 @@ export class NoteMakerAudioEngine {
       return;
     }
     if (slot.id === 7) {
-      this.pluckSynth?.triggerAttackRelease(transposeKey(keyIndex, 19), time, velocity * 0.82);
+      this.pluckSynth?.triggerAttack(transposeKey(keyIndex, 19), time);
       return;
     }
     this.synth?.triggerAttackRelease([note, transposeKey(keyIndex, 7), transposeKey(keyIndex, 12)], 0.34, time, velocity * 0.42);
