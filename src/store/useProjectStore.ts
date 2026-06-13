@@ -4,6 +4,7 @@ import {
   createId,
   loadProjectFromStorage,
   replaceSlotSample,
+  removeStepTrigger,
   saveProjectToStorage,
   selectPattern,
   selectSlot,
@@ -22,6 +23,7 @@ type ProjectState = {
   setSelectedKey: (keyIndex: number) => void;
   toggleWriteMode: () => void;
   toggleStep: (stepIndex: number) => void;
+  removeTrigger: (stepIndex: number, slotId: number, keyIndex: number) => void;
   setTempo: (tempo: number) => void;
   setParamMode: (mode: ParamMode) => void;
   setKnobValue: (knob: "a" | "b", value: number) => void;
@@ -53,6 +55,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project, selectedKeyIndex } = get();
     if (!project.writeMode) return;
     updateProject(set, () => toggleStepTrigger(project, stepIndex, project.activeSlotId, selectedKeyIndex));
+  },
+
+  removeTrigger: (stepIndex, slotId, keyIndex) => {
+    const { project } = get();
+    updateProject(set, () => removeStepTrigger(project, stepIndex, slotId, keyIndex));
   },
 
   setTempo: (tempo) => updateProject(set, (project) => setProjectTempo(project, tempo)),

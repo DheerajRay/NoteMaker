@@ -83,6 +83,33 @@ export function toggleStepTrigger(project: Project, stepIndex: number, slotId: n
   return touch({ ...project, patterns });
 }
 
+export function removeStepTrigger(project: Project, stepIndex: number, slotId: number, keyIndex: number): Project {
+  const safeStep = clamp(Math.round(stepIndex), 0, STEPS_PER_PATTERN - 1);
+  const safeSlotId = clamp(Math.round(slotId), 1, SLOT_COUNT);
+  const safeKeyIndex = clamp(Math.round(keyIndex), 1, SLOT_COUNT);
+  const patternIndex = project.patterns.findIndex((pattern) => pattern.id === project.activePatternId);
+  if (patternIndex < 0) return project;
+
+  let removed = false;
+  const patterns = project.patterns.map((pattern, index) => {
+    if (index !== patternIndex) return pattern;
+    return {
+      ...pattern,
+      steps: pattern.steps.map((step) => {
+        if (step.index !== safeStep) return step;
+        const triggers = step.triggers.filter((trigger) => {
+          const shouldRemove = trigger.slotId === safeSlotId && trigger.keyIndex === safeKeyIndex;
+          if (shouldRemove) removed = true;
+          return !shouldRemove;
+        });
+        return { ...step, triggers };
+      })
+    };
+  });
+
+  return removed ? touch({ ...project, patterns }) : project;
+}
+
 export function updateSlotParams(project: Project, slotId: number, params: Partial<Pick<SoundSlot, "trimStart" | "trimEnd" | "gain" | "pitch" | "filter" | "resonance">>): Project {
   const slots = project.slots.map((slot) => {
     if (slot.id !== slotId) return slot;

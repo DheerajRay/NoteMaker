@@ -15,6 +15,7 @@ export default function App() {
     setSelectedKey,
     toggleWriteMode,
     toggleStep,
+    removeTrigger,
     setTempo,
     setParamMode,
     setKnobValue,
@@ -85,6 +86,7 @@ export default function App() {
       onSelectKey={handleSelectKey}
       onToggleWrite={toggleWriteMode}
       onToggleStep={toggleStep}
+      onRemoveTrigger={removeTrigger}
       onTempoChange={setTempo}
       onParamModeChange={setParamMode}
       onKnobChange={setKnobValue}

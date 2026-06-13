@@ -18,9 +18,9 @@ describe("PO33 NoteMaker app", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: /notemaker/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/pattern 01/i);
+    expect(screen.queryByLabelText(/lcd status/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/lcd action animation/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/8-bit sample animation/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/8-bit sample animation/i)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/disco/i);
     expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/112/i);
     expect(screen.getByRole("button", { name: /hip hop tempo 90 bpm/i })).toBeInTheDocument();
@@ -44,7 +44,6 @@ describe("PO33 NoteMaker app", () => {
     fireEvent.click(screen.getByRole("button", { name: /write mode/i }));
     fireEvent.click(screen.getByRole("button", { name: /step 05/i }));
 
-    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/write on/i);
     expect(screen.getByLabelText(/flow step 05 1 sounds/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
@@ -64,12 +63,31 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.queryByText(/\+1/i)).not.toBeInTheDocument();
   });
 
+  it("removes a written sound directly from the beat flow", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /write mode/i }));
+    fireEvent.click(screen.getByRole("button", { name: /slot 09/i }));
+    fireEvent.click(screen.getByRole("button", { name: /key 01/i }));
+    fireEvent.click(screen.getByRole("button", { name: /step 01/i }));
+    fireEvent.click(screen.getByRole("button", { name: /slot 10/i }));
+    fireEvent.click(screen.getByRole("button", { name: /key 02/i }));
+    fireEvent.click(screen.getByRole("button", { name: /step 01/i }));
+
+    expect(screen.getByLabelText(/flow step 01 2 sounds/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /remove slot 09 kick from beat 01/i }));
+
+    expect(screen.getByLabelText(/flow step 01 1 sounds/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /remove slot 09 kick from beat 01/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove slot 10 snare from beat 01/i })).toBeInTheDocument();
+  });
+
   it("changes tempo by category", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /techno tempo 140 bpm/i }));
 
-    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/bpm 140/i);
     expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/techno/i);
     expect(screen.getByRole("button", { name: /techno tempo 140 bpm/i })).toHaveAttribute("aria-pressed", "true");
   });
@@ -98,7 +116,6 @@ describe("PO33 NoteMaker app", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /show this button/i }));
 
-    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/slot 09 kick \+ key 01/i);
 
     fireEvent.click(screen.getByRole("button", { name: /next demo step/i }));

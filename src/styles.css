@@ -10,7 +10,6 @@
   --panel-light: #ffd9a6;
   --panel-dark: #22211d;
   --line: #5f3820;
-  --lcd: #7fa37c;
   --orange: #ef6f2e;
   --orange-deep: #b9471f;
   --green: #8ddb83;
@@ -104,7 +103,6 @@ h2 {
 }
 
 .device-header,
-.lcd,
 .flow-panel,
 .machine-grid,
 .lower-panel,
@@ -200,126 +198,6 @@ h2 {
   background: #fff1c8;
   color: #2a2018;
   font-size: 1.1rem;
-}
-
-.lcd {
-  min-height: 88px;
-  display: grid;
-  grid-template-columns: 20px 78px repeat(6, minmax(78px, 1fr));
-  gap: 8px 10px;
-  align-items: center;
-  padding: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.18)), #2f4237;
-  color: #e4ffd0;
-  font-family: "Courier New", ui-monospace, monospace;
-  box-shadow: inset 0 5px 22px rgba(0, 0, 0, 0.45);
-}
-
-.lcd span {
-  display: block;
-  color: #b7d4a2;
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.lcd strong {
-  display: block;
-  margin-top: 4px;
-  font-size: clamp(1.35rem, 3vw, 2.2rem);
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.run-light {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #66715d;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
-}
-
-.run-light.is-on {
-  background: #e8ff7d;
-  box-shadow: 0 0 20px #e8ff7d;
-}
-
-.pixel-sampler {
-  --pixel-size: 6px;
-  width: 64px;
-  height: 54px;
-  position: relative;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 0 10px rgba(214, 255, 183, 0.26));
-}
-
-.pixel-sampler span {
-  position: absolute;
-  display: block;
-}
-
-.pixel-row {
-  left: 8px;
-  width: 48px;
-  height: 6px;
-  background: #dffff0;
-  box-shadow:
-    0 6px 0 #9ddba4,
-    0 12px 0 #5f9d71,
-    0 18px 0 #dffff0,
-    0 24px 0 #9ddba4;
-}
-
-.pixel-row-top {
-  top: 8px;
-  width: 36px;
-  left: 14px;
-}
-
-.pixel-row-mid {
-  top: 20px;
-}
-
-.pixel-row-low {
-  top: 34px;
-  width: 40px;
-  left: 12px;
-}
-
-.pixel-eye {
-  top: 18px;
-  width: 6px;
-  height: 6px;
-  background: #243126;
-}
-
-.pixel-eye-left {
-  left: 22px;
-}
-
-.pixel-eye-right {
-  left: 38px;
-}
-
-.pixel-meter {
-  right: 0;
-  bottom: 8px;
-  width: 6px;
-  height: 18px;
-  background: #e8ff7d;
-  box-shadow:
-    -8px 6px 0 #dffff0,
-    -16px 0 0 #e8ff7d,
-    -24px 10px 0 #dffff0;
-  transform: translateY(calc((var(--pixel-step) % 4) * -1px));
-}
-
-.pixel-sampler.is-playing {
-  animation: pixel-bounce 0.55s steps(2, end) infinite;
-}
-
-.pixel-sampler.is-playing .pixel-meter {
-  animation: pixel-meter 0.36s steps(3, end) infinite;
 }
 
 .flow-panel {
@@ -425,11 +303,19 @@ h2 {
   min-height: 14px;
   display: grid;
   place-items: center;
+  padding: 0;
+  border: 0;
   border-radius: 5px;
   font-family: "Courier New", ui-monospace, monospace;
   font-size: 0.68rem;
   font-weight: 900;
   line-height: 1;
+  text-transform: none;
+  box-shadow: none;
+}
+
+.flow-trigger:hover {
+  filter: brightness(1.08);
 }
 
 .flow-trigger-melodic {
@@ -721,31 +607,6 @@ h2 {
   padding: 0 12px;
 }
 
-@keyframes pixel-bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes pixel-meter {
-  0% {
-    height: 12px;
-  }
-
-  50% {
-    height: 28px;
-  }
-
-  100% {
-    height: 18px;
-  }
-}
-
 .file-control input {
   position: absolute;
   inset: 0;
@@ -899,10 +760,6 @@ h2 {
 
   .device-header {
     display: grid;
-  }
-
-  .lcd {
-    grid-template-columns: 22px 70px repeat(3, minmax(0, 1fr));
   }
 
   .beat-flow-strip {

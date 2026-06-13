@@ -14,6 +14,7 @@ type Po33DeviceProps = {
   onSelectKey: (keyIndex: number) => void;
   onToggleWrite: () => void;
   onToggleStep: (stepIndex: number) => void;
+  onRemoveTrigger: (stepIndex: number, slotId: number, keyIndex: number) => void;
   onTempoChange: (tempo: number) => void;
   onParamModeChange: (mode: ParamMode) => void;
   onKnobChange: (knob: "a" | "b", value: number) => void;
@@ -45,6 +46,7 @@ export function Po33Device({
   onSelectKey,
   onToggleWrite,
   onToggleStep,
+  onRemoveTrigger,
   onTempoChange,
   onParamModeChange,
   onKnobChange,
@@ -57,7 +59,6 @@ export function Po33Device({
 }: Po33DeviceProps) {
   const activeSlot = project.slots.find((slot) => slot.id === project.activeSlotId) ?? project.slots[0];
   const activePattern = project.patterns.find((pattern) => pattern.id === project.activePatternId) ?? project.patterns[0];
-  const activeStep = activePattern.steps[currentStep] ?? activePattern.steps[0];
   const scheduledCount = createSchedulePlan(project).length;
   const actionHint = getActionHint({
     activeSlot,
@@ -143,17 +144,6 @@ export function Po33Device({
           </div>
         </header>
 
-        <section className="lcd" aria-label="LCD status">
-          <span className={`run-light ${playing ? "is-on" : ""}`} aria-hidden="true" />
-          <PixelSampler playing={playing} stepIndex={activeStep.index} />
-          <LcdCell label="pattern" value={format2(project.activePatternId)} />
-          <LcdCell label="slot" value={format2(project.activeSlotId)} />
-          <LcdCell label="step" value={format2(currentStep + 1)} />
-          <LcdCell label="bpm" value={String(project.tempo)} />
-          <LcdCell label="write" value={project.writeMode ? "on" : "off"} />
-          <LcdCell label="events" value={String(scheduledCount)} />
-        </section>
-
         <section className="flow-panel" aria-label="Beat flow overview">
           <div className="flow-header">
             <ControlLabel
@@ -172,6 +162,7 @@ export function Po33Device({
             pattern={activePattern}
             playing={playing}
             slots={project.slots}
+            onRemoveTrigger={onRemoveTrigger}
           />
           {scheduledCount === 0 ? (
             <p className="empty-pattern-hint">
@@ -367,11 +358,13 @@ function getActionHint({
 
 function BeatFlowStrip({
   currentStep,
+  onRemoveTrigger,
   pattern,
   playing,
   slots
 }: {
   currentStep: number;
+  onRemoveTrigger: (stepIndex: number, slotId: number, keyIndex: number) => void;
   pattern: Project["patterns"][number];
   playing: boolean;
   slots: SoundSlot[];
@@ -380,25 +373,30 @@ function BeatFlowStrip({
     <div className="beat-flow-strip" aria-label="Beat flow timeline">
       {pattern.steps.map((step) => {
         const isCurrent = step.index === currentStep;
-        const triggerSlots = step.triggers.map((trigger) => slots.find((slot) => slot.id === trigger.slotId) ?? null);
+        const triggerSlots = step.triggers.map((trigger) => ({
+          trigger,
+          slot: slots.find((slot) => slot.id === trigger.slotId) ?? null
+        }));
         return (
           <div
             key={step.index}
             className={`flow-step ${isCurrent ? "is-current" : ""} ${triggerSlots.length ? "has-events" : ""}`}
-            aria-label={`Flow step ${format2(step.index + 1)} ${triggerSlots.length ? `${triggerSlots.length} sounds` : "empty"}`}
+            aria-label={`Flow step ${format2(step.index + 1)} ${step.triggers.length ? `${step.triggers.length} sounds` : "empty"}`}
           >
             <span className="flow-step-number">{format2(step.index + 1)}</span>
             <div className="flow-lane">
-              {triggerSlots.map((slot, order) =>
+              {triggerSlots.map(({ slot, trigger }, order) =>
                 slot ? (
-                  <span
-                    key={`${slot.id}-${order}`}
+                  <button
+                    type="button"
+                    key={`${slot.id}-${trigger.keyIndex}-${order}`}
                     className={`flow-trigger flow-trigger-${slot.type}`}
                     title={`${order + 1}. ${format2(slot.id)} ${slot.name}`}
-                    aria-hidden="true"
+                    aria-label={`Remove slot ${format2(slot.id)} ${slot.name} from beat ${format2(step.index + 1)}`}
+                    onClick={() => onRemoveTrigger(step.index, slot.id, trigger.keyIndex)}
                   >
                     {format2(slot.id)}
-                  </span>
+                  </button>
                 ) : null
               )}
             </div>
@@ -500,7 +498,7 @@ const DEMO_STEPS: DemoStep[] = [
     title: "7. Play and stop",
     target: "play / stop",
     body:
-      "Play starts the pattern from step 01 and animates the LCD. If events is 0, there are no written notes yet, so write a step before expecting loop sound.",
+      "Play starts the pattern from step 01 and advances the Beat Flow. If events is 0, there are no written notes yet, so write a step before expecting loop sound.",
     showLabel: "Toggle transport"
   },
   {
@@ -586,33 +584,6 @@ function GuideItem({ title, body }: { title: string; body: string }) {
       <h3>{title}</h3>
       <p>{body}</p>
     </article>
-  );
-}
-
-function PixelSampler({ playing, stepIndex }: { playing: boolean; stepIndex: number }) {
-  return (
-    <div
-      className={`pixel-sampler ${playing ? "is-playing" : ""}`}
-      aria-label="8-bit sample animation"
-      role="img"
-      style={{ "--pixel-step": stepIndex } as React.CSSProperties}
-    >
-      <span className="pixel-row pixel-row-top" />
-      <span className="pixel-row pixel-row-mid" />
-      <span className="pixel-row pixel-row-low" />
-      <span className="pixel-eye pixel-eye-left" />
-      <span className="pixel-eye pixel-eye-right" />
-      <span className="pixel-meter" />
-    </div>
-  );
-}
-
-function LcdCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span>{label} {value}</span>
-      <strong>{value}</strong>
-    </div>
   );
 }
 
