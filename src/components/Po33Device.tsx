@@ -26,6 +26,13 @@ type Po33DeviceProps = {
 };
 
 const PARAM_MODES: ParamMode[] = ["trim", "tone", "filter"];
+const TEMPO_CATEGORIES = [
+  { label: "Slow", tempo: 72, description: "spacious" },
+  { label: "Hip hop", tempo: 90, description: "head-nod" },
+  { label: "Disco", tempo: 120, description: "steady" },
+  { label: "Techno", tempo: 140, description: "driving" },
+  { label: "Fast", tempo: 170, description: "rapid" }
+] as const;
 
 export function Po33Device({
   project,
@@ -703,8 +710,7 @@ function Knob({ slot, knob, mode, onChange }: { slot: SoundSlot; knob: "a" | "b"
 }
 
 function TempoControl({ tempo, onTempoChange }: { tempo: number; onTempoChange: (tempo: number) => void }) {
-  const classification = getTempoClassification(tempo);
-  const meterPosition = `${((tempo - 60) / 180) * 100}%`;
+  const category = getTempoCategory(tempo);
 
   return (
     <div className="tempo-module" aria-label="Tempo control">
@@ -712,39 +718,42 @@ function TempoControl({ tempo, onTempoChange }: { tempo: number; onTempoChange: 
         <span>bpm</span>
         <strong>{tempo}</strong>
       </div>
-      <label>
-        <span className="sr-only">BPM</span>
-        <input
-          type="range"
-          min={60}
-          max={240}
-          value={tempo}
-          aria-label="BPM"
-          onChange={(event) => onTempoChange(Number(event.target.value))}
-        />
-      </label>
-      <div className="tempo-meter" aria-hidden="true">
-        <span style={{ left: meterPosition }} />
+      <div className="tempo-category-grid" aria-label="BPM category presets">
+        {TEMPO_CATEGORIES.map((candidate) => (
+          <button
+            type="button"
+            key={candidate.label}
+            aria-label={`${candidate.label} tempo ${candidate.tempo} BPM`}
+            aria-pressed={candidate.label === category.label}
+            onClick={() => onTempoChange(candidate.tempo)}
+          >
+            <strong>{candidate.label}</strong>
+            <span>{candidate.tempo}</span>
+          </button>
+        ))}
       </div>
-      <div className="tempo-scale" aria-hidden="true">
-        <span>low</span>
-        <span>mid</span>
-        <span>high</span>
+      <div className="tempo-nudge">
+        <button type="button" aria-label="Decrease BPM" onClick={() => onTempoChange(Math.max(60, tempo - 1))}>
+          -
+        </button>
+        <p className="tempo-classification">
+          <strong>{category.label}</strong>
+          {category.description}
+        </p>
+        <button type="button" aria-label="Increase BPM" onClick={() => onTempoChange(Math.min(240, tempo + 1))}>
+          +
+        </button>
       </div>
-      <p className="tempo-classification">
-        <strong>{classification.label}</strong>
-        {classification.description}
-      </p>
     </div>
   );
 }
 
-function getTempoClassification(tempo: number): { label: string; description: string } {
-  if (tempo < 80) return { label: "Slow", description: " heavy, spacious timing" };
-  if (tempo < 110) return { label: "Laid back", description: " relaxed pocket for slower loops" };
-  if (tempo < 130) return { label: "Groove", description: " balanced beat-making range" };
-  if (tempo < 160) return { label: "Fast", description: " energetic, dance-leaning pace" };
-  return { label: "Very fast", description: " tight, rapid sequencing" };
+function getTempoCategory(tempo: number): { label: string; description: string } {
+  if (tempo < 82) return { label: "Slow", description: " spacious timing" };
+  if (tempo < 105) return { label: "Hip hop", description: " head-nod pocket" };
+  if (tempo < 132) return { label: "Disco", description: " steady groove" };
+  if (tempo < 156) return { label: "Techno", description: " driving loop" };
+  return { label: "Fast", description: " rapid sequence" };
 }
 
 function format2(value: number): string {

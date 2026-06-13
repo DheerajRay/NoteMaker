@@ -674,9 +674,9 @@ h2 {
 }
 
 .tempo-module {
-  min-width: 230px;
+  min-width: 260px;
   display: grid;
-  gap: 7px;
+  gap: 8px;
   padding: 10px 12px;
   border: 1px solid rgba(21, 17, 13, 0.48);
   border-radius: 14px;
@@ -706,42 +706,59 @@ h2 {
   line-height: 0.88;
 }
 
-.tempo-module input[type="range"] {
-  width: 100%;
-  height: 18px;
-  accent-color: var(--orange-deep);
-  cursor: pointer;
+.tempo-category-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(42px, 1fr));
+  gap: 5px;
 }
 
-.tempo-meter {
-  height: 8px;
-  position: relative;
-  border: 1px solid rgba(21, 17, 13, 0.42);
-  border-radius: 999px;
-  background: linear-gradient(90deg, #7fa37c 0%, #e8ff7d 52%, #ef6f2e 100%);
+.tempo-category-grid button {
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  gap: 2px;
+  place-items: center;
+  padding: 5px 3px;
+  border-radius: 12px;
+  background: #ffd9a6;
 }
 
-.tempo-meter span {
-  width: 12px;
-  height: 12px;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid #15110d;
-  border-radius: 50%;
-  background: #fff8da;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.24);
+.tempo-category-grid button[aria-pressed="true"] {
+  background: #26251f;
+  color: #e8ff7d;
 }
 
-.tempo-scale {
-  display: flex;
-  justify-content: space-between;
-  color: #66503d;
+.tempo-category-grid strong,
+.tempo-category-grid span {
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+.tempo-category-grid span {
+  font-family: "Courier New", ui-monospace, monospace;
+}
+
+.tempo-nudge {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  gap: 7px;
+  align-items: center;
+}
+
+.tempo-nudge button {
+  width: 34px;
+  min-width: 34px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 12px;
+  background: #26251f;
+  color: var(--paper);
 }
 
 .tempo-classification {
   color: #4a3728 !important;
   line-height: 1.25;
+  text-align: center;
 }
 
 .tempo-classification strong {

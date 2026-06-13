@@ -12,8 +12,10 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/pattern 01/i);
     expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/slot 01 key 01 ready/i);
     expect(screen.getByLabelText(/8-bit sample animation/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/groove/i);
-    expect(screen.getByLabelText(/bpm/i)).toHaveValue("112");
+    expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/disco/i);
+    expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/112/i);
+    expect(screen.getByRole("button", { name: /hip hop tempo 90 bpm/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /techno tempo 140 bpm/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/slot 01 mono bass \+ key 01/i);
     expect(screen.getByLabelText(/beat flow timeline/i)).toBeInTheDocument();
     expect(screen.getByText(/no notes written yet/i)).toBeInTheDocument();
@@ -38,6 +40,16 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/write on/i);
     expect(screen.getByLabelText(/flow step 05 1 sounds/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("changes tempo by category", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /techno tempo 140 bpm/i }));
+
+    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/bpm 140/i);
+    expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/techno/i);
+    expect(screen.getByRole("button", { name: /techno tempo 140 bpm/i })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("opens and closes the tool guide dialog", () => {
