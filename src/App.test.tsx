@@ -33,6 +33,8 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByText(/choose the sound source/i)).toBeInTheDocument();
     expect(screen.getByText(/choose the pitch or slice/i)).toBeInTheDocument();
     expect(screen.getByText(/switch between 16 separate loops/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/project controls/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/selected slot details/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
   });

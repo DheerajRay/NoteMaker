@@ -281,24 +281,23 @@ export function Po33Device({
             ))}
           </div>
 
-          <div className="slot-editor" aria-label="Selected slot details">
-            <div>
-              <p className="device-eyebrow">selected sound</p>
-              <h2>{format2(activeSlot.id)} {activeSlot.name}</h2>
-              <p>{activeSlot.sample ? `${activeSlot.sample.sourceType} sample, ${activeSlot.sample.durationSeconds.toFixed(2)}s` : "empty slot"}</p>
+          <div className="slot-editor" aria-label="Project controls">
+            <div className="file-actions" aria-label="File actions">
+              <label className="file-control icon-control" title="Import sound">
+                <Icon glyph="sound" />
+                <span className="sr-only">import sound</span>
+                <input type="file" accept="audio/*" onChange={(event) => onImportSample(event.target.files?.[0])} />
+              </label>
+              <label className="file-control icon-control" title="Import project">
+                <Icon glyph="import" />
+                <span className="sr-only">import project</span>
+                <input type="file" accept="application/json,.json,.notemaker" onChange={(event) => void handleProjectImport(event.target.files?.[0])} />
+              </label>
+              <button type="button" className="icon-control" aria-label="Export project" title="Export project" onClick={onExportProject}>
+                <Icon glyph="export" />
+              </button>
               {importError ? <p className="error-text">{importError}</p> : null}
             </div>
-            <label className="file-control">
-              import sound
-              <input type="file" accept="audio/*" onChange={(event) => onImportSample(event.target.files?.[0])} />
-            </label>
-            <label className="file-control">
-              import project
-              <input type="file" accept="application/json,.json,.notemaker" onChange={(event) => void handleProjectImport(event.target.files?.[0])} />
-            </label>
-            <button type="button" onClick={onExportProject}>
-              export project
-            </button>
             <TempoControl tempo={project.tempo} onTempoChange={onTempoChange} />
           </div>
         </section>
@@ -584,6 +583,34 @@ function GuideItem({ title, body }: { title: string; body: string }) {
       <h3>{title}</h3>
       <p>{body}</p>
     </article>
+  );
+}
+
+function Icon({ glyph }: { glyph: "sound" | "import" | "export" }) {
+  return (
+    <svg className="control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      {glyph === "sound" ? (
+        <>
+          <path d="M4 14h3l5 4V6l-5 4H4z" />
+          <path d="M16 9c1.3 1.7 1.3 4.3 0 6" />
+          <path d="M19 7c2.2 3 2.2 7 0 10" />
+        </>
+      ) : null}
+      {glyph === "import" ? (
+        <>
+          <path d="M12 4v10" />
+          <path d="M8 10l4 4 4-4" />
+          <path d="M5 18h14" />
+        </>
+      ) : null}
+      {glyph === "export" ? (
+        <>
+          <path d="M12 20V10" />
+          <path d="M8 14l4-4 4 4" />
+          <path d="M5 6h14" />
+        </>
+      ) : null}
+    </svg>
   );
 }
 

@@ -164,7 +164,7 @@ h2 {
 .transport-cluster,
 .mode-row,
 .knob-row,
-.slot-editor {
+.file-actions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -491,19 +491,44 @@ h2 {
 }
 
 .slot-editor {
-  justify-content: end;
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(260px, 300px);
+  align-items: start;
+  gap: 14px;
+  justify-content: stretch;
   color: #2b2a22;
 }
 
-.slot-editor > div {
-  margin-right: auto;
-  display: grid;
-  gap: 5px;
+.file-actions {
+  align-content: start;
+  align-items: start;
+  justify-content: start;
+  gap: 8px;
 }
 
-.slot-editor p:not(.device-eyebrow) {
-  color: #38362c;
-  font-weight: 700;
+.file-actions .error-text {
+  flex-basis: 100%;
+}
+
+.icon-control {
+  width: 46px;
+  min-width: 46px;
+  min-height: 42px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.control-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .tempo-module {
@@ -605,6 +630,11 @@ h2 {
   place-items: center;
   position: relative;
   padding: 0 12px;
+}
+
+.file-control.icon-control {
+  min-width: 46px;
+  padding: 0;
 }
 
 .file-control input {
@@ -936,16 +966,32 @@ h2 {
 
   .slot-editor {
     display: grid;
+    grid-template-columns: 1fr;
     justify-content: stretch;
     gap: 8px;
   }
 
-  .slot-editor > div {
-    margin-right: 0;
+  .file-actions {
+    justify-content: start;
+    gap: 7px;
   }
 
-  .file-control,
-  .slot-editor > button,
+  .icon-control {
+    width: 42px;
+    min-width: 42px;
+    min-height: 38px;
+    border-radius: 12px;
+  }
+
+  .file-control.icon-control {
+    min-width: 42px;
+  }
+
+  .control-icon {
+    width: 20px;
+    height: 20px;
+  }
+
   .tempo-module {
     width: 100%;
     min-width: 0;
