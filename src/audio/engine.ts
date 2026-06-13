@@ -9,6 +9,11 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
   return planProject(project);
 }
 
+export function resolveTriggerStartTime(scheduledTime: number, currentToneTime: number, previousStartTime = Number.NEGATIVE_INFINITY): number {
+  const minimumLeadTime = 0.005;
+  return Math.max(scheduledTime, currentToneTime + minimumLeadTime, previousStartTime + minimumLeadTime);
+}
+
 export class NoteMakerAudioEngine {
   private tone: ToneModule | null = null;
   private synth: InstanceType<ToneModule["PolySynth"]> | null = null;
@@ -18,6 +23,7 @@ export class NoteMakerAudioEngine {
   private drumSynth: InstanceType<ToneModule["MembraneSynth"]> | null = null;
   private noiseSynth: InstanceType<ToneModule["NoiseSynth"]> | null = null;
   private scheduledIds: number[] = [];
+  private lastStartTimes = new Map<string, number>();
 
   async init(): Promise<void> {
     if (!this.tone) {
@@ -104,6 +110,7 @@ export class NoteMakerAudioEngine {
   stop(): void {
     this.tone?.Transport.stop();
     if (this.tone) this.tone.Transport.position = 0;
+    this.lastStartTimes.clear();
   }
 
   dispose(): void {
@@ -136,71 +143,79 @@ export class NoteMakerAudioEngine {
   private triggerSlot(slot: SoundSlot, keyIndex: number, time: number, velocity: number): void {
     if (slot.type === "drum") {
       if (slot.id === 9) {
-        this.drumSynth?.triggerAttackRelease("C1", "8n", time, velocity);
+        this.drumSynth?.triggerAttackRelease("C1", "8n", this.nextStartTime("drum", time), velocity);
         return;
       }
       if (slot.id === 10) {
-        this.noiseSynth?.triggerAttackRelease("12n", time, velocity * 0.85);
-        this.drumSynth?.triggerAttackRelease("G1", "32n", time, velocity * 0.38);
+        this.noiseSynth?.triggerAttackRelease("12n", this.nextStartTime("noise", time), velocity * 0.85);
+        this.drumSynth?.triggerAttackRelease("G1", "32n", this.nextStartTime("drum", time), velocity * 0.38);
         return;
       }
       if (slot.id === 11) {
-        this.noiseSynth?.triggerAttackRelease("32n", time, velocity * 0.55);
+        this.noiseSynth?.triggerAttackRelease("32n", this.nextStartTime("noise", time), velocity * 0.55);
         return;
       }
       if (slot.id === 12) {
-        this.noiseSynth?.triggerAttackRelease("8n", time, velocity * 0.75);
+        this.noiseSynth?.triggerAttackRelease("8n", this.nextStartTime("noise", time), velocity * 0.75);
         return;
       }
       if (slot.id === 13) {
-        this.noiseSynth?.triggerAttackRelease("16n", time, velocity * 0.95);
-        this.drumSynth?.triggerAttackRelease("D2", "64n", time, velocity * 0.22);
+        this.noiseSynth?.triggerAttackRelease("16n", this.nextStartTime("noise", time), velocity * 0.95);
+        this.drumSynth?.triggerAttackRelease("D2", "64n", this.nextStartTime("drum", time), velocity * 0.22);
         return;
       }
       if (slot.id === 14) {
-        this.drumSynth?.triggerAttackRelease("A2", "32n", time, velocity * 0.7);
+        this.drumSynth?.triggerAttackRelease("A2", "32n", this.nextStartTime("drum", time), velocity * 0.7);
         return;
       }
       if (slot.id === 15) {
-        this.drumSynth?.triggerAttackRelease("F2", "16n", time, velocity * 0.68);
+        this.drumSynth?.triggerAttackRelease("F2", "16n", this.nextStartTime("drum", time), velocity * 0.68);
         return;
       }
-      this.synth?.triggerAttackRelease(["C3", "G3"], 0.14, time, velocity * 0.38);
+      this.synth?.triggerAttackRelease(["C3", "G3"], 0.14, this.nextStartTime("synth", time), velocity * 0.38);
       return;
     }
 
     const note = noteForKey(keyIndex);
     if (slot.id === 1) {
-      this.synth?.triggerAttackRelease(note, 0.3, time, velocity);
+      this.synth?.triggerAttackRelease(note, 0.3, this.nextStartTime("synth", time), velocity);
       return;
     }
     if (slot.id === 2) {
-      this.amSynth?.triggerAttackRelease(note, 0.58, time, velocity * 0.82);
-      this.synth?.triggerAttackRelease(transposeKey(keyIndex, 7), 0.48, time, velocity * 0.38);
+      this.amSynth?.triggerAttackRelease(note, 0.58, this.nextStartTime("am", time), velocity * 0.82);
+      this.synth?.triggerAttackRelease(transposeKey(keyIndex, 7), 0.48, this.nextStartTime("synth", time), velocity * 0.38);
       return;
     }
     if (slot.id === 3) {
-      this.fmSynth?.triggerAttackRelease(transposeKey(keyIndex, 12), 0.2, time, velocity * 0.9);
+      this.fmSynth?.triggerAttackRelease(transposeKey(keyIndex, 12), 0.2, this.nextStartTime("fm", time), velocity * 0.9);
       return;
     }
     if (slot.id === 4) {
-      this.pluckSynth?.triggerAttack(note, time);
+      this.pluckSynth?.triggerAttack(note, this.nextStartTime("pluck", time));
       return;
     }
     if (slot.id === 5) {
-      this.amSynth?.triggerAttackRelease(transposeKey(keyIndex, -12), 0.72, time, velocity * 0.72);
+      this.amSynth?.triggerAttackRelease(transposeKey(keyIndex, -12), 0.72, this.nextStartTime("am", time), velocity * 0.72);
       return;
     }
     if (slot.id === 6) {
-      this.fmSynth?.triggerAttackRelease(note, 0.44, time, velocity * 0.58);
-      this.synth?.triggerAttackRelease(transposeKey(keyIndex, 4), 0.44, time, velocity * 0.32);
+      this.fmSynth?.triggerAttackRelease(note, 0.44, this.nextStartTime("fm", time), velocity * 0.58);
+      this.synth?.triggerAttackRelease(transposeKey(keyIndex, 4), 0.44, this.nextStartTime("synth", time), velocity * 0.32);
       return;
     }
     if (slot.id === 7) {
-      this.pluckSynth?.triggerAttack(transposeKey(keyIndex, 19), time);
+      this.pluckSynth?.triggerAttack(transposeKey(keyIndex, 19), this.nextStartTime("pluck", time));
       return;
     }
-    this.synth?.triggerAttackRelease([note, transposeKey(keyIndex, 7), transposeKey(keyIndex, 12)], 0.34, time, velocity * 0.42);
+    this.synth?.triggerAttackRelease([note, transposeKey(keyIndex, 7), transposeKey(keyIndex, 12)], 0.34, this.nextStartTime("synth", time), velocity * 0.42);
+  }
+
+  private nextStartTime(instrument: string, scheduledTime: number): number {
+    const startTime = this.tone
+      ? resolveTriggerStartTime(scheduledTime, this.tone.now(), this.lastStartTimes.get(instrument))
+      : scheduledTime;
+    this.lastStartTimes.set(instrument, startTime);
+    return startTime;
   }
 }
 

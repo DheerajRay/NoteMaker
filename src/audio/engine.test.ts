@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultProject, toggleStepTrigger } from "../domain/project";
-import { createSchedulePlan } from "./engine";
+import { createSchedulePlan, resolveTriggerStartTime } from "./engine";
 
 describe("PO33 audio schedule plan", () => {
   it("creates deterministic schedule entries from pattern triggers", () => {
@@ -16,5 +16,11 @@ describe("PO33 audio schedule plan", () => {
       toneTime: "0:2:0"
     });
     expect(plan.every((entry) => entry.seconds >= 0)).toBe(true);
+  });
+
+  it("nudges trigger times that have slipped behind the audio clock", () => {
+    expect(resolveTriggerStartTime(1.1, 1)).toBe(1.1);
+    expect(resolveTriggerStartTime(0.98, 1)).toBeCloseTo(1.005);
+    expect(resolveTriggerStartTime(1.004, 1, 1.004)).toBeCloseTo(1.009, 4);
   });
 });
