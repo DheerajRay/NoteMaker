@@ -52,6 +52,12 @@ export function Po33Device({
   const activePattern = project.patterns.find((pattern) => pattern.id === project.activePatternId) ?? project.patterns[0];
   const activeStep = activePattern.steps[currentStep] ?? activePattern.steps[0];
   const scheduledCount = createSchedulePlan(project).length;
+  const actionHint = getActionHint({
+    activeSlot,
+    scheduledCount,
+    selectedKeyIndex,
+    writeMode: project.writeMode
+  });
   const [guideOpen, setGuideOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [demoStepIndex, setDemoStepIndex] = useState(0);
@@ -151,6 +157,25 @@ export function Po33Device({
           <LcdCell label="bpm" value={String(project.tempo)} />
           <LcdCell label="write" value={project.writeMode ? "on" : "off"} />
           <LcdCell label="events" value={String(scheduledCount)} />
+        </section>
+
+        <section className="flow-panel" aria-label="Beat flow overview">
+          <div className="current-action" aria-label="Current action">
+            <p className="device-eyebrow">current action</p>
+            <strong>{actionHint.title}</strong>
+            <span>{actionHint.body}</span>
+          </div>
+          <BeatFlowStrip
+            currentStep={currentStep}
+            pattern={activePattern}
+            playing={playing}
+            slots={project.slots}
+          />
+          {scheduledCount === 0 ? (
+            <p className="empty-pattern-hint">
+              No notes written yet. Turn write on, choose a sound, then click a step to place the first beat.
+            </p>
+          ) : null}
         </section>
 
         <div className="machine-grid">
@@ -327,6 +352,82 @@ function getActionText({
   }
   if (writeMode) return `write slot ${format2(activeSlotId)} key ${format2(selectedKeyIndex)}`;
   return `slot ${format2(activeSlotId)} key ${format2(selectedKeyIndex)} ready`;
+}
+
+function getActionHint({
+  activeSlot,
+  scheduledCount,
+  selectedKeyIndex,
+  writeMode
+}: {
+  activeSlot: SoundSlot;
+  scheduledCount: number;
+  selectedKeyIndex: number;
+  writeMode: boolean;
+}): { title: string; body: string } {
+  const selected = `Slot ${format2(activeSlot.id)} ${activeSlot.name} + Key ${format2(selectedKeyIndex)}`;
+  if (writeMode) {
+    return {
+      title: `${selected}. Write is on.`,
+      body: "Click a step below to place or remove this sound in the loop."
+    };
+  }
+  if (scheduledCount === 0) {
+    return {
+      title: `${selected}. Ready to audition.`,
+      body: "You can hear keys now, but play needs written steps before the loop makes sound."
+    };
+  }
+  return {
+    title: `${selected}. Write is off.`,
+    body: "Click keys to audition sounds, or turn write on to change the loop."
+  };
+}
+
+function BeatFlowStrip({
+  currentStep,
+  pattern,
+  playing,
+  slots
+}: {
+  currentStep: number;
+  pattern: Project["patterns"][number];
+  playing: boolean;
+  slots: SoundSlot[];
+}) {
+  return (
+    <div className="beat-flow-strip" aria-label="Beat flow timeline">
+      {pattern.steps.map((step) => {
+        const isCurrent = step.index === currentStep;
+        const triggerSlots = step.triggers
+          .map((trigger) => slots.find((slot) => slot.id === trigger.slotId))
+          .filter((slot): slot is SoundSlot => Boolean(slot));
+        return (
+          <div
+            key={step.index}
+            className={`flow-step ${isCurrent ? "is-current" : ""} ${triggerSlots.length ? "has-events" : ""}`}
+            aria-label={`Flow step ${format2(step.index + 1)} ${triggerSlots.length ? `${triggerSlots.length} sounds` : "empty"}`}
+          >
+            <span className="flow-step-number">{format2(step.index + 1)}</span>
+            <div className="flow-lane">
+              {triggerSlots.slice(0, 3).map((slot) => (
+                <span
+                  key={slot.id}
+                  className={`flow-trigger flow-trigger-${slot.type}`}
+                  title={`${format2(slot.id)} ${slot.name}`}
+                  aria-hidden="true"
+                >
+                  {format2(slot.id)}
+                </span>
+              ))}
+              {triggerSlots.length > 3 ? <span className="flow-more" aria-hidden="true">+{triggerSlots.length - 3}</span> : null}
+            </div>
+            <span className={`flow-playhead ${playing && isCurrent ? "is-running" : ""}`} aria-hidden="true" />
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function ToolGuide({ onClose }: { onClose: () => void }) {

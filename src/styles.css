@@ -105,6 +105,7 @@ h2 {
 
 .device-header,
 .lcd,
+.flow-panel,
 .machine-grid,
 .lower-panel,
 .key-bank {
@@ -335,6 +336,123 @@ h2 {
 
 .pixel-sampler.is-playing .pixel-meter {
   animation: pixel-meter 0.36s steps(3, end) infinite;
+}
+
+.flow-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(22, 22, 18, 0.16);
+}
+
+.current-action {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid rgba(21, 17, 13, 0.44);
+  border-radius: 14px;
+  background: #fff1c8;
+  color: #241a13;
+}
+
+.current-action strong {
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.current-action span,
+.empty-pattern-hint {
+  color: #4a3728;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.beat-flow-strip {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(38px, 1fr));
+  gap: 6px;
+}
+
+.flow-step {
+  min-height: 92px;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 7px;
+  padding: 8px 5px 6px;
+  border: 1px solid #15110d;
+  border-radius: 12px;
+  background: #26251f;
+  color: #f7c98e;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+}
+
+.flow-step.has-events {
+  background: #fff1c8;
+  color: #241a13;
+}
+
+.flow-step.is-current {
+  outline: 3px solid rgba(232, 255, 125, 0.72);
+  outline-offset: 1px;
+}
+
+.flow-step-number {
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.flow-lane {
+  min-height: 48px;
+  display: grid;
+  align-content: end;
+  gap: 3px;
+}
+
+.flow-trigger,
+.flow-more {
+  min-height: 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  font-family: "Courier New", ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.flow-trigger-melodic {
+  background: #62a6d7;
+  color: #081018;
+}
+
+.flow-trigger-drum {
+  background: #ef6f2e;
+  color: #190804;
+}
+
+.flow-more {
+  background: #26251f;
+  color: #fff1c8;
+}
+
+.flow-playhead {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.flow-playhead.is-running {
+  background: #e8ff7d;
+  box-shadow: 0 0 14px rgba(232, 255, 125, 0.72);
+}
+
+.empty-pattern-hint {
+  padding: 10px 12px;
+  border: 1px dashed rgba(21, 17, 13, 0.54);
+  border-radius: 12px;
+  background: #ffd9a6;
 }
 
 .machine-grid {
@@ -782,6 +900,14 @@ h2 {
 
   .lcd-action-bar strong {
     white-space: normal;
+  }
+
+  .beat-flow-strip {
+    grid-template-columns: repeat(8, minmax(34px, 1fr));
+  }
+
+  .flow-step {
+    min-height: 78px;
   }
 
   .slot-bank {

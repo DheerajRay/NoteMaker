@@ -14,9 +14,11 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/8-bit sample animation/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/groove/i);
     expect(screen.getByLabelText(/bpm/i)).toHaveValue("112");
+    expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/slot 01 mono bass \+ key 01/i);
+    expect(screen.getByLabelText(/beat flow timeline/i)).toBeInTheDocument();
+    expect(screen.getByText(/no notes written yet/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.queryByRole("grid", { name: /timeline/i })).not.toBeInTheDocument();
   });
 
   it("selects a slot and writes a step", () => {
@@ -28,6 +30,8 @@ describe("PO33 NoteMaker app", () => {
 
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
     expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/write slot 09 key 01 step 05/i);
+    expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/write is on/i);
+    expect(screen.getByLabelText(/flow step 05 1 sounds/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
   });
 
