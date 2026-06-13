@@ -160,6 +160,11 @@ export function Po33Device({
         </section>
 
         <section className="flow-panel" aria-label="Beat flow overview">
+          <ControlLabel
+            index="1"
+            title="Beat flow"
+            body="visual only: shows what is already written in the loop"
+          />
           <div className="current-action" aria-label="Current action">
             <p className="device-eyebrow">current action</p>
             <strong>{actionHint.title}</strong>
@@ -180,6 +185,11 @@ export function Po33Device({
 
         <div className="machine-grid">
           <section className="sequencer-bank" aria-label="Step sequencer">
+            <ControlLabel
+              index="2"
+              title="Step buttons"
+              body="write mode on: click 1-16 to place or remove the selected sound"
+            />
             <div className="step-led-bank" aria-label="16 step LEDs">
               {activePattern.steps.map((step) => {
                 const hasSelectedTrigger = step.triggers.some((trigger) => trigger.slotId === project.activeSlotId);
@@ -222,6 +232,11 @@ export function Po33Device({
           </section>
 
           <section className="slot-bank" aria-label="16 sound slots">
+            <ControlLabel
+              index="3"
+              title="Sound slots"
+              body="choose the sound source: 01-08 melodic, 09-16 drums"
+            />
             {project.slots.map((slot) => (
               <button
                 type="button"
@@ -240,6 +255,11 @@ export function Po33Device({
         </div>
 
         <section className="key-bank" aria-label="16 performance keys">
+          <ControlLabel
+            index="4"
+            title="Performance keys"
+            body="choose the pitch or slice that gets auditioned or written"
+          />
           {Array.from({ length: 16 }, (_, index) => (
             <button
               type="button"
@@ -255,6 +275,11 @@ export function Po33Device({
 
         <section className="lower-panel">
           <div className="pattern-bank" aria-label="Pattern bank">
+            <ControlLabel
+              index="5"
+              title="Patterns"
+              body="switch between 16 separate loops"
+            />
             {project.patterns.map((pattern) => (
               <button
                 type="button"
@@ -324,6 +349,16 @@ function ActionAnimationBar({
         ))}
       </div>
       <strong>{actionText}</strong>
+    </div>
+  );
+}
+
+function ControlLabel({ index, title, body }: { index: string; title: string; body: string }) {
+  return (
+    <div className="control-label">
+      <span>{index}</span>
+      <strong>{title}</strong>
+      <small>{body}</small>
     </div>
   );
 }

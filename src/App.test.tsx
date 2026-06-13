@@ -17,6 +17,11 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/slot 01 mono bass \+ key 01/i);
     expect(screen.getByLabelText(/beat flow timeline/i)).toBeInTheDocument();
     expect(screen.getByText(/no notes written yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/visual only: shows what is already written/i)).toBeInTheDocument();
+    expect(screen.getByText(/write mode on: click 1-16/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose the sound source/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose the pitch or slice/i)).toBeInTheDocument();
+    expect(screen.getByText(/switch between 16 separate loops/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
   });
