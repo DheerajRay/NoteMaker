@@ -129,8 +129,21 @@ export function Po33Device({
             <h1>NoteMaker</h1>
           </div>
           <div className="transport-cluster">
-            <button type="button" className="help-key" aria-label="Open tool guide" onClick={() => setGuideOpen(true)}>
-              i
+            <button type="button" className="help-key icon-control" aria-label="Open tool guide" title="Tool guide" onClick={() => setGuideOpen(true)}>
+              <Icon glyph="info" />
+            </button>
+            <label className="file-control icon-control" title="Import sound">
+              <Icon glyph="sound" />
+              <span className="sr-only">import sound</span>
+              <input type="file" accept="audio/*" onChange={(event) => onImportSample(event.target.files?.[0])} />
+            </label>
+            <label className="file-control icon-control" title="Import project">
+              <Icon glyph="import" />
+              <span className="sr-only">import project</span>
+              <input type="file" accept="application/json,.json,.notemaker" onChange={(event) => void handleProjectImport(event.target.files?.[0])} />
+            </label>
+            <button type="button" className="icon-control" aria-label="Export project" title="Export project" onClick={onExportProject}>
+              <Icon glyph="export" />
             </button>
             <button type="button" className="demo-key" aria-label="Start guided demo" onClick={() => setDemoOpen(true)}>
               demo
@@ -142,6 +155,7 @@ export function Po33Device({
               reset
             </button>
           </div>
+          {importError ? <p className="error-text header-error">{importError}</p> : null}
         </header>
 
         <section className="flow-panel" aria-label="Beat flow overview">
@@ -281,25 +295,7 @@ export function Po33Device({
             ))}
           </div>
 
-          <div className="slot-editor" aria-label="Project controls">
-            <div className="file-actions" aria-label="File actions">
-              <label className="file-control icon-control" title="Import sound">
-                <Icon glyph="sound" />
-                <span className="sr-only">import sound</span>
-                <input type="file" accept="audio/*" onChange={(event) => onImportSample(event.target.files?.[0])} />
-              </label>
-              <label className="file-control icon-control" title="Import project">
-                <Icon glyph="import" />
-                <span className="sr-only">import project</span>
-                <input type="file" accept="application/json,.json,.notemaker" onChange={(event) => void handleProjectImport(event.target.files?.[0])} />
-              </label>
-              <button type="button" className="icon-control" aria-label="Export project" title="Export project" onClick={onExportProject}>
-                <Icon glyph="export" />
-              </button>
-              {importError ? <p className="error-text">{importError}</p> : null}
-            </div>
-            <TempoControl tempo={project.tempo} onTempoChange={onTempoChange} />
-          </div>
+          <TempoControl tempo={project.tempo} onTempoChange={onTempoChange} />
         </section>
         {guideOpen ? <ToolGuide onClose={() => setGuideOpen(false)} /> : null}
         {demoOpen ? (
@@ -586,9 +582,15 @@ function GuideItem({ title, body }: { title: string; body: string }) {
   );
 }
 
-function Icon({ glyph }: { glyph: "sound" | "import" | "export" }) {
+function Icon({ glyph }: { glyph: "info" | "sound" | "import" | "export" }) {
   return (
     <svg className="control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      {glyph === "info" ? (
+        <>
+          <path d="M12 10v7" />
+          <path d="M12 7h.01" />
+        </>
+      ) : null}
       {glyph === "sound" ? (
         <>
           <path d="M4 14h3l5 4V6l-5 4H4z" />
