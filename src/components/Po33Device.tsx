@@ -443,9 +443,7 @@ function BeatFlowStrip({
     <div className="beat-flow-strip" aria-label="Beat flow timeline">
       {pattern.steps.map((step) => {
         const isCurrent = step.index === currentStep;
-        const triggerSlots = step.triggers
-          .map((trigger) => slots.find((slot) => slot.id === trigger.slotId))
-          .filter((slot): slot is SoundSlot => Boolean(slot));
+        const triggerSlots = step.triggers.map((trigger) => slots.find((slot) => slot.id === trigger.slotId) ?? null);
         return (
           <div
             key={step.index}
@@ -454,17 +452,18 @@ function BeatFlowStrip({
           >
             <span className="flow-step-number">{format2(step.index + 1)}</span>
             <div className="flow-lane">
-              {triggerSlots.slice(0, 3).map((slot) => (
-                <span
-                  key={slot.id}
-                  className={`flow-trigger flow-trigger-${slot.type}`}
-                  title={`${format2(slot.id)} ${slot.name}`}
-                  aria-hidden="true"
-                >
-                  {format2(slot.id)}
-                </span>
-              ))}
-              {triggerSlots.length > 3 ? <span className="flow-more" aria-hidden="true">+{triggerSlots.length - 3}</span> : null}
+              {triggerSlots.map((slot, order) =>
+                slot ? (
+                  <span
+                    key={`${slot.id}-${order}`}
+                    className={`flow-trigger flow-trigger-${slot.type}`}
+                    title={`${order + 1}. ${format2(slot.id)} ${slot.name}`}
+                    aria-hidden="true"
+                  >
+                    {format2(slot.id)}
+                  </span>
+                ) : null
+              )}
             </div>
             <span className={`flow-playhead ${playing && isCurrent ? "is-running" : ""}`} aria-hidden="true" />
           </div>

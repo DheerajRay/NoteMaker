@@ -463,13 +463,15 @@ h2 {
 
 .flow-lane {
   min-height: 48px;
+  max-height: 66px;
   display: grid;
   align-content: end;
   gap: 3px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-.flow-trigger,
-.flow-more {
+.flow-trigger {
   min-height: 14px;
   display: grid;
   place-items: center;
@@ -488,11 +490,6 @@ h2 {
 .flow-trigger-drum {
   background: #ef6f2e;
   color: #190804;
-}
-
-.flow-more {
-  background: #26251f;
-  color: #fff1c8;
 }
 
 .flow-playhead {

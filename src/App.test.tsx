@@ -1,9 +1,18 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
+import { createDefaultProject } from "./domain/project";
+import { useProjectStore } from "./store/useProjectStore";
 
 describe("PO33 NoteMaker app", () => {
-  beforeEach(() => window.localStorage.clear());
+  beforeEach(() => {
+    window.localStorage.clear();
+    useProjectStore.setState({
+      project: createDefaultProject(),
+      selectedKeyIndex: 1,
+      importError: null
+    });
+  });
 
   it("renders the PO33-style device surface", () => {
     render(<App />);
@@ -40,6 +49,20 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/write on/i);
     expect(screen.getByLabelText(/flow step 05 1 sounds/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("shows every written sound in a beat flow step", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /write mode/i }));
+    for (const [slotId, keyId] of [["01", "01"], ["02", "02"], ["03", "03"], ["04", "04"]]) {
+      fireEvent.click(screen.getByRole("button", { name: new RegExp(`slot ${slotId}`, "i") }));
+      fireEvent.click(screen.getByRole("button", { name: new RegExp(`key ${keyId}`, "i") }));
+      fireEvent.click(screen.getByRole("button", { name: /step 01/i }));
+    }
+
+    expect(screen.getByLabelText(/flow step 01 4 sounds/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\+1/i)).not.toBeInTheDocument();
   });
 
   it("changes tempo by category", () => {
