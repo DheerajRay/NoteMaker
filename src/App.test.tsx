@@ -19,7 +19,7 @@ describe("PO33 NoteMaker app", () => {
 
     expect(screen.getByRole("heading", { name: /notemaker/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/pattern 01/i);
-    expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/slot 01 key 01 ready/i);
+    expect(screen.queryByLabelText(/lcd action animation/i)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/8-bit sample animation/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/disco/i);
     expect(screen.getByLabelText(/tempo control/i)).toHaveTextContent(/112/i);
@@ -45,7 +45,6 @@ describe("PO33 NoteMaker app", () => {
     fireEvent.click(screen.getByRole("button", { name: /step 05/i }));
 
     expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
-    expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/write slot 09 key 01 step 05/i);
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/write on/i);
     expect(screen.getByLabelText(/flow step 05 1 sounds/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /step 05/i })).toHaveAttribute("aria-pressed", "true");
@@ -99,7 +98,8 @@ describe("PO33 NoteMaker app", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /show this button/i }));
 
-    expect(screen.getByLabelText(/lcd action animation/i)).toHaveTextContent(/slot 09 key 01 ready/i);
+    expect(screen.getByLabelText(/lcd status/i)).toHaveTextContent(/slot 09/i);
+    expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/slot 09 kick \+ key 01/i);
 
     fireEvent.click(screen.getByRole("button", { name: /next demo step/i }));
 
