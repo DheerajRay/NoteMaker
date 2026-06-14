@@ -312,11 +312,13 @@ h2 {
 }
 
 .flow-trigger {
-  min-height: 14px;
+  min-height: 16px;
   display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 3px;
+  padding: 0 3px 0 5px;
+  border: 1px solid rgba(21, 17, 13, 0.26);
   border-radius: 5px;
   font-family: "Courier New", ui-monospace, monospace;
   font-size: 0.68rem;
@@ -326,8 +328,21 @@ h2 {
   box-shadow: none;
 }
 
-.flow-trigger:hover {
+.flow-trigger:hover,
+.flow-trigger:focus-visible {
   filter: brightness(1.08);
+}
+
+.flow-remove-mark {
+  width: 11px;
+  height: 11px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(21, 17, 13, 0.78);
+  color: #fff1c8;
+  font-size: 0.58rem;
+  line-height: 1;
 }
 
 .flow-trigger-melodic {
@@ -863,6 +878,11 @@ h2 {
     padding: 8px;
   }
 
+  .machine-grid,
+  .sequencer-bank {
+    gap: 8px;
+  }
+
   .beat-flow-strip {
     grid-template-columns: repeat(8, minmax(0, 1fr));
     gap: 5px;
@@ -902,8 +922,16 @@ h2 {
 
   .flow-trigger {
     min-height: 13px;
+    gap: 2px;
+    padding: 0 2px 0 3px;
     border-radius: 4px;
     font-size: 0.62rem;
+  }
+
+  .flow-remove-mark {
+    width: 9px;
+    height: 9px;
+    font-size: 0.5rem;
   }
 
   .step-led-bank {
@@ -943,19 +971,23 @@ h2 {
   }
 
   .slot-pad {
-    min-height: 72px;
+    min-height: 58px;
     gap: 2px;
     padding: 6px;
     border-radius: 12px;
   }
 
-  .slot-pad span,
-  .slot-pad small {
+  .slot-pad span {
     font-size: 0.62rem;
   }
 
+  .slot-pad small {
+    display: none;
+  }
+
   .slot-pad strong {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
+    line-height: 0.96;
   }
 
   .key-bank {

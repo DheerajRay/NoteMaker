@@ -163,7 +163,7 @@ export function Po33Device({
             <ControlLabel
               index="1"
               title="Beat flow"
-              body="loop overview"
+              body="tap chip x to remove"
             />
             <div className="current-action" aria-label="Current action">
               <span className="status-dot" aria-hidden="true" />
@@ -390,7 +390,8 @@ function BeatFlowStrip({
                     aria-label={`Remove slot ${format2(slot.id)} ${slot.name} from beat ${format2(step.index + 1)}`}
                     onClick={() => onRemoveTrigger(step.index, slot.id, trigger.keyIndex)}
                   >
-                    {format2(slot.id)}
+                    <span>{format2(slot.id)}</span>
+                    <span className="flow-remove-mark" aria-hidden="true">x</span>
                   </button>
                 ) : null
               )}

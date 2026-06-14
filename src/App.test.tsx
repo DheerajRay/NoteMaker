@@ -28,7 +28,7 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/slot 01 mono bass \+ key 01/i);
     expect(screen.getByLabelText(/beat flow timeline/i)).toBeInTheDocument();
     expect(screen.getByText(/no notes written yet/i)).toBeInTheDocument();
-    expect(screen.getByText(/loop overview/i)).toBeInTheDocument();
+    expect(screen.getByText(/tap chip x to remove/i)).toBeInTheDocument();
     expect(screen.getByText(/write mode on: click 1-16/i)).toBeInTheDocument();
     expect(screen.getByText(/choose the sound source/i)).toBeInTheDocument();
     expect(screen.getByText(/choose the pitch or slice/i)).toBeInTheDocument();
@@ -65,6 +65,7 @@ describe("PO33 NoteMaker app", () => {
     }
 
     expect(screen.getByLabelText(/flow step 01 4 sounds/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove slot 01 mono bass from beat 01/i })).toHaveTextContent(/x/i);
     expect(screen.queryByText(/\+1/i)).not.toBeInTheDocument();
   });
 
