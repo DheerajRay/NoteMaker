@@ -22,13 +22,15 @@ export type SchedulePlanEntry = {
 };
 
 export function stepToToneTime(step: number): string {
-  const bar = Math.floor(step / STEPS_PER_BAR);
-  const beat = step % STEPS_PER_BAR;
-  return `${bar}:${beat}:0`;
+  const bar = Math.floor(step / STEPS_PER_PATTERN);
+  const stepInBar = step % STEPS_PER_PATTERN;
+  const beat = Math.floor(stepInBar / STEPS_PER_BAR);
+  const sixteenth = stepInBar % STEPS_PER_BAR;
+  return `${bar}:${beat}:${sixteenth}`;
 }
 
 export function stepToSeconds(step: number, tempo: number): number {
-  const secondsPerStep = 60 / tempo;
+  const secondsPerStep = 60 / tempo / 4;
   return step * secondsPerStep;
 }
 

@@ -5,14 +5,14 @@ import { createSchedulePlan, stepToSeconds, stepToToneTime } from "./sequencer";
 describe("PO33 sequencer timing", () => {
   it("converts 16th-note steps into Tone.js transport notation", () => {
     expect(stepToToneTime(0)).toBe("0:0:0");
-    expect(stepToToneTime(3)).toBe("0:3:0");
-    expect(stepToToneTime(4)).toBe("1:0:0");
-    expect(stepToToneTime(15)).toBe("3:3:0");
+    expect(stepToToneTime(3)).toBe("0:0:3");
+    expect(stepToToneTime(4)).toBe("0:1:0");
+    expect(stepToToneTime(15)).toBe("0:3:3");
   });
 
   it("converts 16th-note steps at the current tempo", () => {
-    expect(stepToSeconds(4, 120)).toBe(2);
-    expect(stepToSeconds(1, 60)).toBe(1);
+    expect(stepToSeconds(4, 120)).toBe(0.5);
+    expect(stepToSeconds(1, 60)).toBe(0.25);
   });
 });
 

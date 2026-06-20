@@ -34,7 +34,7 @@ export default function App() {
 
   useEffect(() => {
     if (!playing) return;
-    const stepDurationMs = Math.max(70, 60000 / project.tempo);
+    const stepDurationMs = Math.max(35, 60000 / project.tempo / 4);
     const intervalId = window.setInterval(() => {
       setCurrentStep((step) => (step + 1) % 16);
     }, stepDurationMs);
