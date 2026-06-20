@@ -15,6 +15,10 @@ export type SampleAsset = {
   durationSeconds: number;
   url?: string;
   originalFileName?: string;
+  mimeType?: string;
+  rootMidi?: number;
+  gainCompensation?: number;
+  chokeTargets?: number[];
 };
 
 export type SliceSetting = {
