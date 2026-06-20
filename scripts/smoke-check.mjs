@@ -1,34 +1,116 @@
+import { mkdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
-const errors = [];
+const baseUrl = process.env.SMOKE_BASE_URL ?? "http://127.0.0.1:5173";
+const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const fixturePath = join(projectRoot, "public", "audio", "starter", "09-kick.wav");
+const outputDir = join(projectRoot, "test-results");
+const failures = [];
+const browserErrors = [];
 
+await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ acceptDownloads: true });
 
-async function checkViewport(name, viewport) {
-  const page = await browser.newPage({ viewport });
+function observe(page, name) {
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
+    if (message.type() === "error") browserErrors.push(`${name}: ${message.text()}`);
   });
-  page.on("pageerror", (error) => errors.push(error.message));
-
-  await page.goto("http://127.0.0.1:5173", { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: "NoteMaker" }).waitFor();
-  await page.getByRole("button", { name: "Play song" }).waitFor();
-  await page.getByRole("region", { name: "Pocket performance deck" }).waitFor();
-  await page.getByRole("grid", { name: "Pocket Session timeline" }).waitFor();
-  await page.getByRole("button", { name: /01 kick drums/i }).waitFor();
-  await page.screenshot({ path: `test-results/notemaker-smoke-${name}.png`, fullPage: true });
-  await page.close();
+  page.on("pageerror", (error) => browserErrors.push(`${name}: ${error.message}`));
 }
 
-await checkViewport("desktop", { width: 1440, height: 960 });
-await checkViewport("mobile", { width: 390, height: 844 });
+function check(condition, message) {
+  if (!condition) failures.push(message);
+}
+
+const desktop = await context.newPage();
+observe(desktop, "desktop");
+await desktop.setViewportSize({ width: 1440, height: 1000 });
+await desktop.goto(baseUrl, { waitUntil: "networkidle" });
+await desktop.evaluate(async () => {
+  localStorage.clear();
+  await new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase("notemaker-audio");
+    request.onsuccess = request.onerror = request.onblocked = () => resolve(undefined);
+  });
+});
+await desktop.reload({ waitUntil: "networkidle" });
+
+await desktop.getByRole("heading", { name: "NoteMaker" }).waitFor();
+check(await desktop.getByRole("button", { name: /^step \d{2}$/i }).count() === 16, "Desktop must expose 16 step buttons.");
+check(await desktop.getByRole("button", { name: /^slot \d{2}/i }).count() === 16, "Desktop must expose 16 sound slots.");
+
+await desktop.getByRole("button", { name: /write mode/i }).click();
+await desktop.getByRole("button", { name: /slot 09 kick/i }).click();
+await desktop.getByRole("button", { name: /key 01/i }).click();
+await desktop.getByRole("button", { name: /^step 01$/i }).click();
+const kickChip = desktop.getByRole("button", { name: /remove slot 09 kick from beat 01/i });
+await kickChip.waitFor();
+check((await kickChip.textContent())?.toLowerCase().includes("x"), "Beat Flow chips must expose a remove mark.");
+await kickChip.click();
+check(await kickChip.count() === 0, "Beat Flow chip must remove its trigger.");
+await desktop.getByRole("button", { name: /^step 01$/i }).click();
+
+await desktop.getByRole("button", { name: /play pattern/i }).click();
+await desktop.getByRole("button", { name: /stop playback/i }).waitFor();
+await desktop.waitForTimeout(400);
+await desktop.getByRole("button", { name: /stop playback/i }).click();
+
+await desktop.getByRole("button", { name: /techno tempo 140 bpm/i }).click();
+await desktop.getByRole("button", { name: /pattern 02/i }).click();
+await desktop.reload({ waitUntil: "networkidle" });
+check(await desktop.getByRole("button", { name: /pattern 02/i }).getAttribute("aria-pressed") === "true", "Active pattern must persist after reload.");
+check((await desktop.getByLabel("Tempo control").textContent())?.includes("140"), "Tempo must persist after reload.");
+
+await desktop.locator('input[type="file"][accept*="application/json"]').setInputFiles({
+  name: "broken.json",
+  mimeType: "application/json",
+  buffer: Buffer.from("{bad json")
+});
+await desktop.getByText(/could not import this project/i).waitFor();
+
+await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
+await desktop.locator('input[type="file"][accept="audio/*"]').setInputFiles(fixturePath);
+await desktop.getByRole("button", { name: /slot 01 09-kick/i }).waitFor();
+await desktop.reload({ waitUntil: "networkidle" });
+await desktop.getByRole("button", { name: /slot 01 09-kick/i }).click();
+await desktop.getByRole("button", { name: /key 11/i }).click();
+await desktop.waitForTimeout(150);
+
+const downloadPromise = desktop.waitForEvent("download");
+await desktop.getByRole("button", { name: /export project/i }).click();
+const download = await downloadPromise;
+check(download.suggestedFilename().endsWith(".notemaker.json"), "Project export must download NoteMaker JSON.");
+
+await desktop.screenshot({ path: join(outputDir, "notemaker-smoke-desktop.png"), fullPage: true });
+
+const mobile = await context.newPage();
+observe(mobile, "mobile");
+await mobile.setViewportSize({ width: 390, height: 844 });
+await mobile.goto(baseUrl, { waitUntil: "networkidle" });
+const metrics = await mobile.evaluate(() => ({
+  scrollWidth: document.documentElement.scrollWidth,
+  clientWidth: document.documentElement.clientWidth,
+  scrollHeight: document.documentElement.scrollHeight,
+  undersized: Array.from(document.querySelectorAll("button"))
+    .map((button) => {
+      const bounds = button.getBoundingClientRect();
+      return { label: button.getAttribute("aria-label") ?? button.textContent?.trim(), width: bounds.width, height: bounds.height };
+    })
+    .filter((button) => button.width < 34 || button.height < 34)
+}));
+check(metrics.scrollWidth <= metrics.clientWidth, `Mobile horizontal overflow: ${JSON.stringify(metrics)}.`);
+check(metrics.undersized.length === 0, `Mobile controls below 34px: ${JSON.stringify(metrics.undersized)}.`);
+check(metrics.scrollHeight <= 1800, `Mobile page is unexpectedly tall: ${metrics.scrollHeight}px.`);
+await mobile.screenshot({ path: join(outputDir, "notemaker-smoke-mobile.png"), fullPage: true });
 
 await browser.close();
 
-if (errors.length > 0) {
-  console.error(errors.join("\n"));
+if (browserErrors.length || failures.length) {
+  console.error([...browserErrors, ...failures].join("\n"));
   process.exit(1);
 }
 
-console.log("Smoke check passed: NoteMaker loaded with no console errors.");
+console.log(`Smoke check passed at ${baseUrl}: core audio, persistence, errors, export, and responsive layout verified.`);

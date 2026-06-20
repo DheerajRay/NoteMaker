@@ -46,6 +46,22 @@ describe("PO33 project model", () => {
     expect(parsed.patterns[0].steps[4].triggers[0]).toMatchObject({ slotId: 9, keyIndex: 3 });
   });
 
+  it("restores bundled metadata for starter sounds saved by older builds", () => {
+    const project = createDefaultProject();
+    const legacy = {
+      ...project,
+      slots: project.slots.map((slot) => ({
+        ...slot,
+        sample: slot.sample ? { id: slot.sample.id, name: slot.sample.name, sourceType: "starter", durationSeconds: slot.sample.durationSeconds } : null
+      }))
+    };
+
+    const parsed = parseProject(JSON.stringify(legacy));
+
+    expect(parsed.slots[0].sample?.url).toBe("/audio/starter/01-mono-bass.wav");
+    expect(parsed.slots[0].sample?.rootMidi).toBe(36);
+  });
+
   it("rejects unsupported project versions", () => {
     expect(() => parseProject(JSON.stringify({ version: "notemaker.project.v1" }))).toThrow(
       "Unsupported NoteMaker project version"
