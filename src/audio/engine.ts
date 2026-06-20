@@ -1,7 +1,24 @@
 import { createSchedulePlan as planProject, type SchedulePlanEntry, stepToToneTime } from "../domain/sequencer";
-import type { Project, SoundSlot } from "../domain/types";
+import type { Project, SampleAsset, SoundSlot } from "../domain/types";
+import { loadImportedAudio } from "./sampleStore";
+import { playbackRateForKey } from "./music";
 
 type ToneModule = typeof import("tone");
+
+type ActiveVoice = {
+  source: AudioBufferSourceNode;
+  gain: GainNode;
+  slotId: number;
+};
+
+export type VoicePlan = {
+  offsetSeconds: number;
+  sourceDurationSeconds: number;
+  playbackRate: number;
+  gain: number;
+  filterFrequency: number;
+  resonanceQ: number;
+};
 
 export type { SchedulePlanEntry };
 
@@ -14,78 +31,63 @@ export function resolveTriggerStartTime(scheduledTime: number, currentToneTime: 
   return Math.max(scheduledTime, currentToneTime + minimumLeadTime, previousStartTime + minimumLeadTime);
 }
 
+export function filterFrequencyForValue(value: number): number {
+  const normalized = clamp(value, 0, 1);
+  return 120 * (18000 / 120) ** normalized;
+}
+
+export function resonanceForValue(value: number): number {
+  return 0.2 + clamp(value, 0, 1) * 11.8;
+}
+
+export function createVoicePlan(entry: SchedulePlanEntry, bufferDuration: number): VoicePlan {
+  const trimStart = clamp(entry.trimStart, 0, 1);
+  const trimEnd = clamp(entry.trimEnd, trimStart, 1);
+  return {
+    offsetSeconds: bufferDuration * trimStart,
+    sourceDurationSeconds: Math.max(bufferDuration * (trimEnd - trimStart), 0.005),
+    playbackRate: Math.max(entry.playbackRate, 0.01),
+    gain: clamp(entry.gain, 0, 1.5),
+    filterFrequency: filterFrequencyForValue(entry.filter),
+    resonanceQ: resonanceForValue(entry.resonance)
+  };
+}
+
 export class NoteMakerAudioEngine {
   private tone: ToneModule | null = null;
-  private synth: InstanceType<ToneModule["PolySynth"]> | null = null;
-  private fmSynth: InstanceType<ToneModule["FMSynth"]> | null = null;
-  private amSynth: InstanceType<ToneModule["AMSynth"]> | null = null;
-  private pluckSynth: InstanceType<ToneModule["PluckSynth"]> | null = null;
-  private drumSynth: InstanceType<ToneModule["MembraneSynth"]> | null = null;
-  private noiseSynth: InstanceType<ToneModule["NoiseSynth"]> | null = null;
+  private context: AudioContext | null = null;
+  private melodicBus: GainNode | null = null;
+  private drumBus: GainNode | null = null;
+  private masterGain: GainNode | null = null;
+  private limiter: DynamicsCompressorNode | null = null;
+  private analyser: AnalyserNode | null = null;
   private scheduledIds: number[] = [];
-  private lastStartTimes = new Map<string, number>();
+  private buffers = new Map<string, AudioBuffer>();
+  private activeVoices = new Map<number, ActiveVoice[]>();
 
   async init(): Promise<void> {
-    if (!this.tone) {
-      this.tone = await import("tone");
-    }
+    if (!this.tone) this.tone = await import("tone");
     await this.tone.start();
-    if (!this.synth) {
-      this.synth = new this.tone.PolySynth(this.tone.Synth, {
-        volume: -8,
-        envelope: { attack: 0.005, decay: 0.12, sustain: 0.18, release: 0.18 }
-      }).toDestination();
-    }
-    if (!this.fmSynth) {
-      this.fmSynth = new this.tone.FMSynth({
-        volume: -10,
-        harmonicity: 2.5,
-        modulationIndex: 9,
-        envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.22 }
-      }).toDestination();
-    }
-    if (!this.amSynth) {
-      this.amSynth = new this.tone.AMSynth({
-        volume: -11,
-        harmonicity: 1.5,
-        envelope: { attack: 0.02, decay: 0.18, sustain: 0.16, release: 0.28 }
-      }).toDestination();
-    }
-    if (!this.pluckSynth) {
-      this.pluckSynth = new this.tone.PluckSynth({
-        volume: -9,
-        attackNoise: 0.8,
-        dampening: 3200,
-        resonance: 0.78
-      }).toDestination();
-    }
-    if (!this.drumSynth) {
-      this.drumSynth = new this.tone.MembraneSynth({
-        volume: -5,
-        envelope: { attack: 0.001, decay: 0.18, sustain: 0.02, release: 0.08 }
-      }).toDestination();
-    }
-    if (!this.noiseSynth) {
-      this.noiseSynth = new this.tone.NoiseSynth({
-        volume: -10,
-        envelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.03 }
-      }).toDestination();
+    if (!this.context) {
+      this.context = this.tone.getContext().rawContext as AudioContext;
+      this.createMixGraph();
     }
   }
 
-  scheduleProject(project: Project): SchedulePlanEntry[] {
-    if (!this.tone) return [];
+  async scheduleProject(project: Project): Promise<SchedulePlanEntry[]> {
+    await this.init();
+    const plan = createSchedulePlan(project);
+    await this.prepareAssets(project, plan);
     this.clearSchedule();
+    if (!this.tone) return [];
+
     this.tone.Transport.bpm.value = project.tempo;
     this.tone.Transport.loop = true;
     this.tone.Transport.loopStart = stepToToneTime(0);
-    this.tone.Transport.loopEnd = stepToToneTime(16);
+    this.tone.Transport.loopEnd = "1:0:0";
 
-    const plan = createSchedulePlan(project);
     for (const entry of plan) {
-      const scheduledId = this.tone.Transport.schedule((time) => {
-        this.triggerEntry(entry, time);
-      }, entry.toneTime);
+      const scheduledId = this.tone.Transport.schedule((time) => this.triggerEntry(entry, time), entry.toneTime);
       this.scheduledIds.push(scheduledId);
     }
     return plan;
@@ -94,8 +96,10 @@ export class NoteMakerAudioEngine {
   async triggerPreview(project: Project, slotId: number, keyIndex: number): Promise<void> {
     await this.init();
     const slot = project.slots.find((candidate) => candidate.id === slotId);
-    if (!slot) return;
-    this.triggerSlot(slot, keyIndex, this.tone?.now() ?? 0, 0.92);
+    if (!slot?.sample || !this.context) return;
+    const buffer = await this.loadSample(slot.sample);
+    const entry = previewEntry(project, slot, keyIndex);
+    this.triggerVoice(entry, buffer, this.context.currentTime + 0.005);
   }
 
   async play(): Promise<void> {
@@ -110,23 +114,87 @@ export class NoteMakerAudioEngine {
   stop(): void {
     this.tone?.Transport.stop();
     if (this.tone) this.tone.Transport.position = 0;
-    this.lastStartTimes.clear();
+    this.stopAllVoices();
+  }
+
+  getMasterLevel(): number {
+    if (!this.analyser) return 0;
+    const samples = new Float32Array(this.analyser.fftSize);
+    this.analyser.getFloatTimeDomainData(samples);
+    const sum = samples.reduce((total, sample) => total + sample * sample, 0);
+    return Math.sqrt(sum / samples.length);
   }
 
   dispose(): void {
     this.clearSchedule();
-    this.synth?.dispose();
-    this.fmSynth?.dispose();
-    this.amSynth?.dispose();
-    this.pluckSynth?.dispose();
-    this.drumSynth?.dispose();
-    this.noiseSynth?.dispose();
-    this.synth = null;
-    this.fmSynth = null;
-    this.amSynth = null;
-    this.pluckSynth = null;
-    this.drumSynth = null;
-    this.noiseSynth = null;
+    this.stopAllVoices();
+    this.melodicBus?.disconnect();
+    this.drumBus?.disconnect();
+    this.masterGain?.disconnect();
+    this.limiter?.disconnect();
+    this.analyser?.disconnect();
+    this.buffers.clear();
+    this.context = null;
+    this.melodicBus = null;
+    this.drumBus = null;
+    this.masterGain = null;
+    this.limiter = null;
+    this.analyser = null;
+  }
+
+  private createMixGraph(): void {
+    if (!this.context) return;
+    this.melodicBus = this.context.createGain();
+    this.drumBus = this.context.createGain();
+    this.masterGain = this.context.createGain();
+    this.limiter = this.context.createDynamicsCompressor();
+    this.analyser = this.context.createAnalyser();
+
+    this.melodicBus.gain.value = 0.58;
+    this.drumBus.gain.value = 0.64;
+    this.masterGain.gain.value = 0.78;
+    this.limiter.threshold.value = -6;
+    this.limiter.knee.value = 0;
+    this.limiter.ratio.value = 20;
+    this.limiter.attack.value = 0.003;
+    this.limiter.release.value = 0.12;
+    this.analyser.fftSize = 256;
+
+    this.melodicBus.connect(this.masterGain);
+    this.drumBus.connect(this.masterGain);
+    this.masterGain.connect(this.limiter);
+    this.limiter.connect(this.analyser);
+    this.analyser.connect(this.context.destination);
+  }
+
+  private async prepareAssets(project: Project, plan: SchedulePlanEntry[]): Promise<void> {
+    const sampleIds = new Set(plan.map((entry) => entry.sampleId));
+    const samples = project.slots
+      .map((slot) => slot.sample)
+      .filter((sample): sample is SampleAsset => Boolean(sample && sampleIds.has(sample.id)));
+    await Promise.all(samples.map((sample) => this.loadSample(sample)));
+  }
+
+  private async loadSample(sample: SampleAsset): Promise<AudioBuffer> {
+    const cached = this.buffers.get(sample.id);
+    if (cached) return cached;
+    if (!this.context) throw new Error("Audio is not initialized.");
+
+    let bytes: ArrayBuffer;
+    if (sample.sourceType === "starter") {
+      if (!sample.url) throw new Error(`Starter sound ${sample.name} has no asset URL.`);
+      const response = await fetch(sample.url);
+      if (!response.ok) throw new Error(`Could not load starter sound ${sample.name}.`);
+      bytes = await response.arrayBuffer();
+    } else {
+      const stored = await loadImportedAudio(sample.id);
+      if (!stored) throw new Error(`Imported sound ${sample.name} is unavailable on this device.`);
+      bytes = stored.bytes;
+    }
+
+    const buffer = await this.context.decodeAudioData(bytes.slice(0));
+    this.buffers.set(sample.id, buffer);
+    return buffer;
   }
 
   private clearSchedule(): void {
@@ -136,108 +204,105 @@ export class NoteMakerAudioEngine {
   }
 
   private triggerEntry(entry: SchedulePlanEntry, time: number): void {
-    const slotType = entry.slotId >= 9 ? "drum" : "melodic";
-    this.triggerSlot({ id: entry.slotId, type: slotType } as SoundSlot, entry.keyIndex, time, Math.min(entry.gain, 1));
+    const buffer = this.buffers.get(entry.sampleId);
+    if (!buffer || !this.context) return;
+    this.triggerVoice(entry, buffer, Math.max(time, this.context.currentTime + 0.005));
   }
 
-  private triggerSlot(slot: SoundSlot, keyIndex: number, time: number, velocity: number): void {
-    if (slot.type === "drum") {
-      if (slot.id === 9) {
-        this.drumSynth?.triggerAttackRelease("C1", "8n", this.nextStartTime("drum", time), velocity);
-        return;
-      }
-      if (slot.id === 10) {
-        this.noiseSynth?.triggerAttackRelease("12n", this.nextStartTime("noise", time), velocity * 0.85);
-        this.drumSynth?.triggerAttackRelease("G1", "32n", this.nextStartTime("drum", time), velocity * 0.38);
-        return;
-      }
-      if (slot.id === 11) {
-        this.noiseSynth?.triggerAttackRelease("32n", this.nextStartTime("noise", time), velocity * 0.55);
-        return;
-      }
-      if (slot.id === 12) {
-        this.noiseSynth?.triggerAttackRelease("8n", this.nextStartTime("noise", time), velocity * 0.75);
-        return;
-      }
-      if (slot.id === 13) {
-        this.noiseSynth?.triggerAttackRelease("16n", this.nextStartTime("noise", time), velocity * 0.95);
-        this.drumSynth?.triggerAttackRelease("D2", "64n", this.nextStartTime("drum", time), velocity * 0.22);
-        return;
-      }
-      if (slot.id === 14) {
-        this.drumSynth?.triggerAttackRelease("A2", "32n", this.nextStartTime("drum", time), velocity * 0.7);
-        return;
-      }
-      if (slot.id === 15) {
-        this.drumSynth?.triggerAttackRelease("F2", "16n", this.nextStartTime("drum", time), velocity * 0.68);
-        return;
-      }
-      this.synth?.triggerAttackRelease(["C3", "G3"], 0.14, this.nextStartTime("synth", time), velocity * 0.38);
-      return;
-    }
+  private triggerVoice(entry: SchedulePlanEntry, buffer: AudioBuffer, startTime: number): void {
+    if (!this.context) return;
+    entry.chokeTargets.forEach((slotId) => this.stopSlotVoices(slotId, startTime));
+    this.enforceVoiceLimit(entry.slotId, startTime);
 
-    const note = noteForKey(keyIndex);
-    if (slot.id === 1) {
-      this.synth?.triggerAttackRelease(note, 0.3, this.nextStartTime("synth", time), velocity);
-      return;
-    }
-    if (slot.id === 2) {
-      this.amSynth?.triggerAttackRelease(note, 0.58, this.nextStartTime("am", time), velocity * 0.82);
-      this.synth?.triggerAttackRelease(transposeKey(keyIndex, 7), 0.48, this.nextStartTime("synth", time), velocity * 0.38);
-      return;
-    }
-    if (slot.id === 3) {
-      this.fmSynth?.triggerAttackRelease(transposeKey(keyIndex, 12), 0.2, this.nextStartTime("fm", time), velocity * 0.9);
-      return;
-    }
-    if (slot.id === 4) {
-      this.pluckSynth?.triggerAttack(note, this.nextStartTime("pluck", time));
-      return;
-    }
-    if (slot.id === 5) {
-      this.amSynth?.triggerAttackRelease(transposeKey(keyIndex, -12), 0.72, this.nextStartTime("am", time), velocity * 0.72);
-      return;
-    }
-    if (slot.id === 6) {
-      this.fmSynth?.triggerAttackRelease(note, 0.44, this.nextStartTime("fm", time), velocity * 0.58);
-      this.synth?.triggerAttackRelease(transposeKey(keyIndex, 4), 0.44, this.nextStartTime("synth", time), velocity * 0.32);
-      return;
-    }
-    if (slot.id === 7) {
-      this.pluckSynth?.triggerAttack(transposeKey(keyIndex, 19), this.nextStartTime("pluck", time));
-      return;
-    }
-    this.synth?.triggerAttackRelease([note, transposeKey(keyIndex, 7), transposeKey(keyIndex, 12)], 0.34, this.nextStartTime("synth", time), velocity * 0.42);
+    const plan = createVoicePlan(entry, buffer.duration);
+    const source = this.context.createBufferSource();
+    const filter = this.context.createBiquadFilter();
+    const gain = this.context.createGain();
+    const destination = entry.slotType === "drum" ? this.drumBus : this.melodicBus;
+    if (!destination) return;
+
+    source.buffer = buffer;
+    source.playbackRate.setValueAtTime(plan.playbackRate, startTime);
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(plan.filterFrequency, startTime);
+    filter.Q.setValueAtTime(plan.resonanceQ, startTime);
+
+    const audibleDuration = plan.sourceDurationSeconds / plan.playbackRate;
+    const releaseStart = startTime + Math.max(audibleDuration - 0.008, 0.003);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(Math.max(plan.gain, 0.0002), startTime + 0.003);
+    gain.gain.setValueAtTime(Math.max(plan.gain, 0.0002), releaseStart);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + audibleDuration);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(destination);
+
+    const voice: ActiveVoice = { source, gain, slotId: entry.slotId };
+    const voices = this.activeVoices.get(entry.slotId) ?? [];
+    voices.push(voice);
+    this.activeVoices.set(entry.slotId, voices);
+    source.onended = () => {
+      source.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+      this.activeVoices.set(entry.slotId, (this.activeVoices.get(entry.slotId) ?? []).filter((candidate) => candidate !== voice));
+    };
+    source.start(startTime, plan.offsetSeconds, plan.sourceDurationSeconds);
   }
 
-  private nextStartTime(instrument: string, scheduledTime: number): number {
-    const startTime = this.tone
-      ? resolveTriggerStartTime(scheduledTime, this.tone.now(), this.lastStartTimes.get(instrument))
-      : scheduledTime;
-    this.lastStartTimes.set(instrument, startTime);
-    return startTime;
+  private enforceVoiceLimit(slotId: number, time: number): void {
+    const voices = this.activeVoices.get(slotId) ?? [];
+    if (voices.length < 8) return;
+    this.releaseVoice(voices[0], time);
+  }
+
+  private stopSlotVoices(slotId: number, time: number): void {
+    (this.activeVoices.get(slotId) ?? []).forEach((voice) => this.releaseVoice(voice, time));
+  }
+
+  private releaseVoice(voice: ActiveVoice, time: number): void {
+    try {
+      voice.gain.gain.cancelScheduledValues(time);
+      voice.gain.gain.setTargetAtTime(0.0001, time, 0.003);
+      voice.source.stop(time + 0.015);
+    } catch {
+      // The voice may already have ended between scheduling and cleanup.
+    }
+  }
+
+  private stopAllVoices(): void {
+    const time = this.context?.currentTime ?? 0;
+    this.activeVoices.forEach((voices) => voices.forEach((voice) => this.releaseVoice(voice, time)));
+    this.activeVoices.clear();
   }
 }
 
-function noteForEntry(entry: SchedulePlanEntry): string {
-  if (entry.slotId >= 9) {
-    return ["C2", "D2", "E2", "F2", "G2", "A2", "B2", "C3"][entry.slotId - 9] ?? "C2";
-  }
-  return noteForKey(entry.keyIndex);
+function previewEntry(project: Project, slot: SoundSlot, keyIndex: number): SchedulePlanEntry {
+  const sample = slot.sample!;
+  return {
+    patternId: project.activePatternId,
+    stepIndex: 0,
+    slotId: slot.id,
+    keyIndex,
+    sampleId: sample.id,
+    sampleName: sample.name,
+    slotType: slot.type,
+    toneTime: "0:0:0",
+    seconds: 0,
+    durationSeconds: sample.durationSeconds,
+    trimStart: slot.trimStart,
+    trimEnd: slot.trimEnd,
+    gain: slot.gain * 0.92 * (sample.gainCompensation ?? 1),
+    playbackRate: slot.type === "melodic"
+      ? playbackRateForKey(keyIndex, sample.rootMidi ?? 60, slot.pitch)
+      : 2 ** (slot.pitch / 12),
+    filter: slot.filter,
+    resonance: slot.resonance,
+    chokeTargets: sample.chokeTargets ?? []
+  };
 }
 
-function noteForKey(keyIndex: number): string {
-  const scale = ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5", "G5", "A5", "C6"];
-  return scale[keyIndex - 1] ?? "C4";
-}
-
-function transposeKey(keyIndex: number, offset: number): string {
-  const chromatic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const note = noteForKey(keyIndex).match(/^([A-G]#?)(\d)$/);
-  if (!note) return noteForKey(keyIndex);
-  const baseIndex = chromatic.indexOf(note[1]);
-  const midiLike = Number(note[2]) * 12 + baseIndex + offset;
-  const octave = Math.floor(midiLike / 12);
-  const pitch = chromatic[((midiLike % 12) + 12) % 12];
-  return `${pitch}${octave}`;
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }

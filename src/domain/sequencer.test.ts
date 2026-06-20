@@ -36,7 +36,7 @@ describe("PO33 schedule planning", () => {
   });
 
   it("maps trim and pitch into planned playback values", () => {
-    const project = updateSlotParams(toggleStepTrigger(createDefaultProject(), 0, 1, 8), 1, {
+    const project = updateSlotParams(toggleStepTrigger(createDefaultProject(), 0, 1, 1), 1, {
       trimStart: 0.25,
       trimEnd: 0.75,
       pitch: 12

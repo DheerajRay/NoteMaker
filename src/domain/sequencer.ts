@@ -1,4 +1,6 @@
 import type { Project } from "./types";
+import { playbackRateForKey } from "../audio/music";
+import type { SlotType } from "./types";
 
 export const STEPS_PER_PATTERN = 16;
 export const STEPS_PER_BAR = 4;
@@ -10,6 +12,7 @@ export type SchedulePlanEntry = {
   keyIndex: number;
   sampleId: string;
   sampleName: string;
+  slotType: SlotType;
   toneTime: string;
   seconds: number;
   durationSeconds: number;
@@ -19,6 +22,7 @@ export type SchedulePlanEntry = {
   playbackRate: number;
   filter: number;
   resonance: number;
+  chokeTargets: number[];
 };
 
 export function stepToToneTime(step: number): string {
@@ -50,15 +54,19 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
         keyIndex: trigger.keyIndex,
         sampleId: slot.sample.id,
         sampleName: slot.sample.name,
+        slotType: slot.type,
         toneTime: stepToToneTime(step.index),
         seconds: stepToSeconds(step.index, project.tempo),
         durationSeconds: Math.max(slot.sample.durationSeconds * trimSpan, 0.05),
         trimStart: slot.trimStart,
         trimEnd: slot.trimEnd,
-        gain: slot.gain * trigger.velocity,
-        playbackRate: 2 ** (slot.pitch / 12),
+        gain: slot.gain * trigger.velocity * (slot.sample.gainCompensation ?? 1),
+        playbackRate: slot.type === "melodic"
+          ? playbackRateForKey(trigger.keyIndex, slot.sample.rootMidi ?? 60, slot.pitch)
+          : 2 ** (slot.pitch / 12),
         filter: slot.filter,
-        resonance: slot.resonance
+        resonance: slot.resonance,
+        chokeTargets: slot.sample.chokeTargets ?? []
       };
     })
   ).sort((a, b) => a.stepIndex - b.stepIndex || a.slotId - b.slotId || a.keyIndex - b.keyIndex);

@@ -46,8 +46,7 @@ export default function App() {
   }, [currentStep]);
 
   async function handlePlay() {
-    await engineRef.current.init();
-    engineRef.current.scheduleProject(project);
+    await engineRef.current.scheduleProject(project);
     setCurrentStep(0);
     await engineRef.current.play();
     setPlaying(true);
