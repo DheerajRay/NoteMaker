@@ -98,6 +98,16 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByRole("button", { name: /techno tempo 140 bpm/i })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("shows an error when a selected sound file is not audio", async () => {
+    render(<App />);
+
+    const input = screen.getByTitle(/import sound/i).querySelector("input");
+    expect(input).not.toBeNull();
+    fireEvent.change(input!, { target: { files: [new File(["text"], "notes.txt", { type: "text/plain" })] } });
+
+    expect(await screen.findByText(/choose an audio file for this slot/i)).toBeInTheDocument();
+  });
+
   it("opens and closes the tool guide dialog", () => {
     render(<App />);
 

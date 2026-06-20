@@ -18,7 +18,7 @@ type Po33DeviceProps = {
   onTempoChange: (tempo: number) => void;
   onParamModeChange: (mode: ParamMode) => void;
   onKnobChange: (knob: "a" | "b", value: number) => void;
-  onImportSample: (file: File | undefined) => void;
+  onImportSample: (file: File | undefined) => void | Promise<void>;
   onImportProject: (project: Project) => void;
   onExportProject: () => void;
   onResetProject: () => void;
@@ -135,7 +135,7 @@ export function Po33Device({
             <label className="file-control icon-control" title="Import sound">
               <Icon glyph="sound" />
               <span className="sr-only">import sound</span>
-              <input type="file" accept="audio/*" onChange={(event) => onImportSample(event.target.files?.[0])} />
+              <input type="file" accept="audio/*" onChange={(event) => void onImportSample(event.target.files?.[0])} />
             </label>
             <label className="file-control icon-control" title="Import project">
               <Icon glyph="import" />

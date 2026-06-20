@@ -1,7 +1,7 @@
 import { create } from "zustand";
+import { importAudioFile } from "../audio/sampleImport";
 import {
   createDefaultProject,
-  createId,
   loadProjectFromStorage,
   replaceSlotSample,
   removeStepTrigger,
@@ -27,7 +27,7 @@ type ProjectState = {
   setTempo: (tempo: number) => void;
   setParamMode: (mode: ParamMode) => void;
   setKnobValue: (knob: "a" | "b", value: number) => void;
-  importSampleFile: (file: File | undefined) => void;
+  importSampleFile: (file: File | undefined) => Promise<void>;
   importProject: (project: Project) => void;
   resetProject: () => void;
 };
@@ -89,25 +89,17 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     updateProject(set, () => updateSlotParams(project, slot.id, params));
   },
 
-  importSampleFile: (file) => {
+  importSampleFile: async (file) => {
     if (!file) return;
-    const { project } = get();
-    if (!file.type.startsWith("audio/")) {
-      set({ importError: "Choose an audio file for this slot." });
-      return;
+    try {
+      const sample = await importAudioFile(file);
+      const { project } = get();
+      const next = replaceSlotSample(project, project.activeSlotId, sample);
+      saveProjectToStorage(next);
+      set({ project: next, importError: null });
+    } catch (error) {
+      set({ importError: error instanceof Error ? error.message : "Could not import this audio file." });
     }
-    const objectUrl = URL.createObjectURL(file);
-    const name = file.name.replace(/\.[^.]+$/, "") || "Imported Sound";
-    const next = replaceSlotSample(project, project.activeSlotId, {
-      id: createId("sample"),
-      name,
-      sourceType: "imported",
-      durationSeconds: 1,
-      url: objectUrl,
-      originalFileName: file.name
-    });
-    saveProjectToStorage(next);
-    set({ project: next, importError: null });
   },
 
   importProject: (project) => {
