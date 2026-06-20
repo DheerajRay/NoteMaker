@@ -29,6 +29,7 @@ type ProjectState = {
   setKnobValue: (knob: "a" | "b", value: number) => void;
   importSampleFile: (file: File | undefined) => Promise<void>;
   importProject: (project: Project) => void;
+  setImportError: (message: string | null) => void;
   resetProject: () => void;
 };
 
@@ -106,6 +107,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     saveProjectToStorage(project);
     set({ project, importError: null });
   },
+
+  setImportError: (message) => set({ importError: message }),
 
   resetProject: () => {
     const project = createDefaultProject();

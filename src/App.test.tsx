@@ -108,6 +108,19 @@ describe("PO33 NoteMaker app", () => {
     expect(await screen.findByText(/choose an audio file for this slot/i)).toBeInTheDocument();
   });
 
+  it("shows an error when a project file is malformed", async () => {
+    render(<App />);
+
+    const input = screen.getByTitle(/import project/i).querySelector("input");
+    expect(input).not.toBeNull();
+    const projectFile = Object.assign(new File(["{bad json"], "broken.json", { type: "application/json" }), {
+      text: async () => "{bad json"
+    });
+    fireEvent.change(input!, { target: { files: [projectFile] } });
+
+    expect(await screen.findByText(/could not import this project/i)).toBeInTheDocument();
+  });
+
   it("opens and closes the tool guide dialog", () => {
     render(<App />);
 

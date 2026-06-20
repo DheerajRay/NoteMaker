@@ -21,6 +21,7 @@ export default function App() {
     setKnobValue,
     importSampleFile,
     importProject,
+    setImportError,
     resetProject
   } = useProjectStore();
   const [playing, setPlaying] = useState(false);
@@ -46,10 +47,16 @@ export default function App() {
   }, [currentStep]);
 
   async function handlePlay() {
-    await engineRef.current.scheduleProject(project);
-    setCurrentStep(0);
-    await engineRef.current.play();
-    setPlaying(true);
+    try {
+      await engineRef.current.scheduleProject(project);
+      setCurrentStep(0);
+      await engineRef.current.play();
+      setPlaying(true);
+      setImportError(null);
+    } catch (error) {
+      setPlaying(false);
+      setImportError(audioErrorMessage(error));
+    }
   }
 
   function handleSelectSlot(slotId: number) {
@@ -64,7 +71,7 @@ export default function App() {
 
   function triggerPreview(slotId: number, keyIndex: number) {
     if (!canUseBrowserAudio()) return;
-    void engineRef.current.triggerPreview(project, slotId, keyIndex);
+    void engineRef.current.triggerPreview(project, slotId, keyIndex).catch((error) => setImportError(audioErrorMessage(error)));
   }
 
   function handleStop() {
@@ -91,12 +98,17 @@ export default function App() {
       onKnobChange={setKnobValue}
       onImportSample={importSampleFile}
       onImportProject={importProject}
+      onImportError={setImportError}
       onExportProject={() => downloadProject({ ...project, chain: { patternIds: schedulePlan.length ? project.chain.patternIds : [project.activePatternId] } })}
       onResetProject={resetProject}
       onPlay={() => void handlePlay()}
       onStop={handleStop}
     />
   );
+}
+
+function audioErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Could not load this sound.";
 }
 
 function canUseBrowserAudio(): boolean {

@@ -20,6 +20,7 @@ type Po33DeviceProps = {
   onKnobChange: (knob: "a" | "b", value: number) => void;
   onImportSample: (file: File | undefined) => void | Promise<void>;
   onImportProject: (project: Project) => void;
+  onImportError: (message: string) => void;
   onExportProject: () => void;
   onResetProject: () => void;
   onPlay: () => void;
@@ -52,6 +53,7 @@ export function Po33Device({
   onKnobChange,
   onImportSample,
   onImportProject,
+  onImportError,
   onExportProject,
   onResetProject,
   onPlay,
@@ -72,7 +74,11 @@ export function Po33Device({
 
   async function handleProjectImport(file: File | undefined) {
     if (!file) return;
-    onImportProject(parseProject(await file.text()));
+    try {
+      onImportProject(parseProject(await file.text()));
+    } catch {
+      onImportError("Could not import this project. Check that the file is valid NoteMaker JSON.");
+    }
   }
 
   function handleDemoAction(stepId: DemoStepId) {
