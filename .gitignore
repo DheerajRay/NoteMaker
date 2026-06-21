@@ -8,3 +8,5 @@ playwright-report/
 test-results/
 .playwright-mcp/
 po33-*-smoke.png
+
+.vercel
