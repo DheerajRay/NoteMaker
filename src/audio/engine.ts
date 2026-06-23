@@ -1,7 +1,7 @@
 import { createSchedulePlan as planProject, type SchedulePlanEntry, stepToToneTime } from "../domain/sequencer";
 import type { Project, SampleAsset, SoundSlot } from "../domain/types";
 import { loadImportedAudio } from "./sampleStore";
-import { playbackRateForKey } from "./music";
+import { drumVariationForKey, playbackRateForDrumKey, playbackRateForKey } from "./music";
 
 type ToneModule = typeof import("tone");
 
@@ -45,7 +45,7 @@ export function createVoicePlan(entry: SchedulePlanEntry, bufferDuration: number
   const trimEnd = clamp(entry.trimEnd, trimStart, 1);
   return {
     offsetSeconds: bufferDuration * trimStart,
-    sourceDurationSeconds: Math.max(bufferDuration * (trimEnd - trimStart), 0.005),
+    sourceDurationSeconds: Math.max(bufferDuration * (trimEnd - trimStart) * entry.durationScale, 0.005),
     playbackRate: Math.max(entry.playbackRate, 0.01),
     gain: clamp(entry.gain, 0, 1.5),
     filterFrequency: filterFrequencyForValue(entry.filter),
@@ -280,6 +280,8 @@ export class NoteMakerAudioEngine {
 
 function previewEntry(project: Project, slot: SoundSlot, keyIndex: number): SchedulePlanEntry {
   const sample = slot.sample!;
+  const trimSpan = Math.max(slot.trimEnd - slot.trimStart, 0.01);
+  const drumVariation = slot.type === "drum" ? drumVariationForKey(keyIndex) : null;
   return {
     patternId: project.activePatternId,
     stepIndex: 0,
@@ -290,14 +292,15 @@ function previewEntry(project: Project, slot: SoundSlot, keyIndex: number): Sche
     slotType: slot.type,
     toneTime: "0:0:0",
     seconds: 0,
-    durationSeconds: sample.durationSeconds,
+    durationSeconds: Math.max(sample.durationSeconds * trimSpan * (drumVariation?.durationScale ?? 1), 0.05),
+    durationScale: drumVariation?.durationScale ?? 1,
     trimStart: slot.trimStart,
     trimEnd: slot.trimEnd,
-    gain: slot.gain * 0.92 * (sample.gainCompensation ?? 1),
+    gain: slot.gain * 0.92 * (sample.gainCompensation ?? 1) * (drumVariation?.gainScale ?? 1),
     playbackRate: slot.type === "melodic"
       ? playbackRateForKey(keyIndex, sample.rootMidi ?? 60, slot.pitch)
-      : 2 ** (slot.pitch / 12),
-    filter: slot.filter,
+      : playbackRateForDrumKey(keyIndex, slot.id, slot.pitch),
+    filter: clamp(slot.filter * (drumVariation?.filterScale ?? 1), 0, 1),
     resonance: slot.resonance,
     chokeTargets: sample.chokeTargets ?? []
   };

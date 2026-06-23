@@ -47,4 +47,50 @@ describe("PO33 schedule planning", () => {
     expect(event.trimEnd).toBe(0.75);
     expect(event.playbackRate).toBeCloseTo(2);
   });
+
+  it("keeps melodic performance keys mapped to pitch", () => {
+    const lowKeyProject = toggleStepTrigger(createDefaultProject(), 0, 1, 1);
+    const highKeyProject = toggleStepTrigger(createDefaultProject(), 0, 1, 16);
+
+    expect(createSchedulePlan(lowKeyProject)[0].playbackRate).toBeLessThan(createSchedulePlan(highKeyProject)[0].playbackRate);
+  });
+
+  it("maps drum performance keys to distinct playback variations", () => {
+    const project = createDefaultProject();
+    const entries = Array.from({ length: 16 }, (_, index) =>
+      createSchedulePlan(toggleStepTrigger(project, 0, 9, index + 1))[0]
+    );
+
+    expect(new Set(entries.map((entry) => entry.playbackRate.toFixed(4))).size).toBeGreaterThan(8);
+    expect(new Set(entries.map((entry) => entry.filter.toFixed(4))).size).toBeGreaterThan(8);
+    expect(new Set(entries.map((entry) => entry.durationSeconds.toFixed(4))).size).toBeGreaterThan(8);
+    expect(new Set(entries.map((entry) => entry.gain.toFixed(4))).size).toBeGreaterThan(4);
+  });
+
+  it("applies drum variations to imported drum samples", () => {
+    const project = {
+      ...createDefaultProject(),
+      slots: createDefaultProject().slots.map((slot) =>
+        slot.id === 9
+          ? {
+              ...slot,
+              sample: {
+                id: "imported-kick",
+                name: "Imported Kick",
+                sourceType: "imported" as const,
+                durationSeconds: 1,
+                gainCompensation: 1
+              }
+            }
+          : slot
+      )
+    };
+
+    const sub = createSchedulePlan(toggleStepTrigger(project, 0, 9, 1))[0];
+    const chip = createSchedulePlan(toggleStepTrigger(project, 0, 9, 16))[0];
+
+    expect(sub.sampleName).toBe("Imported Kick");
+    expect(sub.playbackRate).not.toBeCloseTo(chip.playbackRate);
+    expect(sub.durationSeconds).not.toBeCloseTo(chip.durationSeconds);
+  });
 });

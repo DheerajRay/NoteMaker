@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DRUM_KEY_VARIATIONS, PERFORMANCE_KEY_MIDI } from "../audio/music";
 import { parseProject } from "../domain/project";
 import { createSchedulePlan } from "../domain/sequencer";
 import type { ParamMode, Project, SoundSlot } from "../domain/types";
@@ -184,11 +185,6 @@ export function Po33Device({
             slots={project.slots}
             onRemoveTrigger={onRemoveTrigger}
           />
-          {scheduledCount === 0 ? (
-            <p className="empty-pattern-hint">
-              No notes written yet. Turn write on, choose a sound, then click a step to place the first beat.
-            </p>
-          ) : null}
         </section>
 
         <div className="machine-grid">
@@ -266,19 +262,24 @@ export function Po33Device({
           <ControlLabel
             index="4"
             title="Performance keys"
-            body="choose the pitch or slice that gets auditioned or written"
+            body={activeSlot.type === "drum" ? "choose a drum variation that gets auditioned or written" : "choose the pitch that gets auditioned or written"}
           />
-          {Array.from({ length: 16 }, (_, index) => (
-            <button
-              type="button"
-              key={index}
-              aria-label={`Key ${format2(index + 1)}`}
-              aria-pressed={selectedKeyIndex === index + 1}
-              onClick={() => onSelectKey(index + 1)}
-            >
-              {index + 1}
-            </button>
-          ))}
+          {Array.from({ length: 16 }, (_, index) => {
+            const keyIndex = index + 1;
+            const keyLabel = activeSlot.type === "drum" ? DRUM_KEY_VARIATIONS[index].label : noteNameForMidi(PERFORMANCE_KEY_MIDI[index]);
+            return (
+              <button
+                type="button"
+                key={index}
+                aria-label={`Key ${format2(keyIndex)} ${keyLabel}`}
+                aria-pressed={selectedKeyIndex === keyIndex}
+                onClick={() => onSelectKey(keyIndex)}
+              >
+                <strong>{keyIndex}</strong>
+                <small>{keyLabel}</small>
+              </button>
+            );
+          })}
         </section>
 
         <section className="lower-panel">
@@ -697,6 +698,12 @@ function getTempoCategory(tempo: number): { label: string; description: string }
   if (tempo < 132) return { label: "Disco", description: " steady groove" };
   if (tempo < 156) return { label: "Techno", description: " driving loop" };
   return { label: "Fast", description: " rapid sequence" };
+}
+
+function noteNameForMidi(midi: number): string {
+  const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const octave = Math.floor(midi / 12) - 1;
+  return `${names[midi % 12]}${octave}`;
 }
 
 function format2(value: number): string {

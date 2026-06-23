@@ -27,11 +27,11 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByRole("button", { name: /techno tempo 140 bpm/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/current action/i)).toHaveTextContent(/slot 01 mono bass \+ key 01/i);
     expect(screen.getByLabelText(/beat flow timeline/i)).toBeInTheDocument();
-    expect(screen.getByText(/no notes written yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no notes written yet/i)).not.toBeInTheDocument();
     expect(screen.getByText(/tap chip x to remove/i)).toBeInTheDocument();
     expect(screen.getByText(/write mode on: click 1-16/i)).toBeInTheDocument();
     expect(screen.getByText(/choose the sound source/i)).toBeInTheDocument();
-    expect(screen.getByText(/choose the pitch or slice/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose the pitch that gets auditioned or written/i)).toBeInTheDocument();
     expect(screen.getByText(/switch between 16 separate loops/i)).toBeInTheDocument();
     expect(screen.getByTitle(/import sound/i)).toBeInTheDocument();
     expect(screen.getByTitle(/import project/i)).toBeInTheDocument();
@@ -40,6 +40,17 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.queryByLabelText(/selected slot details/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("shows drum variation names on performance keys for drum slots", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /slot 09/i }));
+
+    expect(screen.getByText(/choose a drum variation/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /key 01 sub/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /key 07 punch/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /key 16 chip/i })).toBeInTheDocument();
   });
 
   it("selects a slot and writes a step", () => {

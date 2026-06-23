@@ -1,5 +1,5 @@
 import type { Project } from "./types";
-import { playbackRateForKey } from "../audio/music";
+import { drumVariationForKey, playbackRateForDrumKey, playbackRateForKey } from "../audio/music";
 import type { SlotType } from "./types";
 
 export const STEPS_PER_PATTERN = 16;
@@ -16,6 +16,7 @@ export type SchedulePlanEntry = {
   toneTime: string;
   seconds: number;
   durationSeconds: number;
+  durationScale: number;
   trimStart: number;
   trimEnd: number;
   gain: number;
@@ -47,6 +48,7 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
       const slot = project.slots.find((candidate) => candidate.id === trigger.slotId);
       if (!slot?.sample) return [];
       const trimSpan = Math.max(slot.trimEnd - slot.trimStart, 0.01);
+      const drumVariation = slot.type === "drum" ? drumVariationForKey(trigger.keyIndex) : null;
       return {
         patternId: pattern.id,
         stepIndex: step.index,
@@ -57,17 +59,22 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
         slotType: slot.type,
         toneTime: stepToToneTime(step.index),
         seconds: stepToSeconds(step.index, project.tempo),
-        durationSeconds: Math.max(slot.sample.durationSeconds * trimSpan, 0.05),
+        durationSeconds: Math.max(slot.sample.durationSeconds * trimSpan * (drumVariation?.durationScale ?? 1), 0.05),
+        durationScale: drumVariation?.durationScale ?? 1,
         trimStart: slot.trimStart,
         trimEnd: slot.trimEnd,
-        gain: slot.gain * trigger.velocity * (slot.sample.gainCompensation ?? 1),
+        gain: slot.gain * trigger.velocity * (slot.sample.gainCompensation ?? 1) * (drumVariation?.gainScale ?? 1),
         playbackRate: slot.type === "melodic"
           ? playbackRateForKey(trigger.keyIndex, slot.sample.rootMidi ?? 60, slot.pitch)
-          : 2 ** (slot.pitch / 12),
-        filter: slot.filter,
+          : playbackRateForDrumKey(trigger.keyIndex, slot.id, slot.pitch),
+        filter: clamp(slot.filter * (drumVariation?.filterScale ?? 1), 0, 1),
         resonance: slot.resonance,
         chokeTargets: slot.sample.chokeTargets ?? []
       };
     })
   ).sort((a, b) => a.stepIndex - b.stepIndex || a.slotId - b.slotId || a.keyIndex - b.keyIndex);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }

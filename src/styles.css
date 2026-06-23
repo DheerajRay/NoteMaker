@@ -505,6 +505,28 @@ h2 {
   border-radius: 16px;
 }
 
+.key-bank button {
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  padding: 5px 2px;
+  line-height: 1;
+}
+
+.key-bank button strong,
+.key-bank button small {
+  display: block;
+  line-height: 1;
+}
+
+.key-bank button small {
+  max-width: 100%;
+  font-size: 0.54rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .lower-panel {
   display: grid;
   grid-template-columns: minmax(440px, 1fr) auto;
