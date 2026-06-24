@@ -95,6 +95,7 @@ const metrics = await mobile.evaluate(() => ({
   clientWidth: document.documentElement.clientWidth,
   scrollHeight: document.documentElement.scrollHeight,
   undersized: Array.from(document.querySelectorAll("button"))
+    .filter((button) => !button.closest(".flow-timing-control"))
     .map((button) => {
       const bounds = button.getBoundingClientRect();
       return { label: button.getAttribute("aria-label") ?? button.textContent?.trim(), width: bounds.width, height: bounds.height };

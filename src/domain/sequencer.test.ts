@@ -28,6 +28,16 @@ describe("PO33 sequencer timing", () => {
     expect(event.timingOffsetSeconds).toBeCloseTo(0.041666, 5);
     expect(event.scheduledSeconds).toBeCloseTo(0.541666, 5);
   });
+
+  it("schedules early timing offsets before the step", () => {
+    const project = adjustStepTimingOffset(toggleStepTrigger(createDefaultProject(), 4, 9, 1), 4, -3);
+    const [event] = createSchedulePlan({ ...project, tempo: 120 });
+
+    expect(event.seconds).toBe(0.5);
+    expect(event.timingOffsetTicks).toBe(-3);
+    expect(event.timingOffsetSeconds).toBeCloseTo(-0.0625);
+    expect(event.scheduledSeconds).toBeCloseTo(0.4375);
+  });
 });
 
 describe("PO33 schedule planning", () => {

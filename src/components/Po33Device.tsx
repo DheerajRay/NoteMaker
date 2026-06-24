@@ -411,18 +411,25 @@ function BeatFlowStrip({
               )}
             </div>
             <span className={`flow-playhead ${playing && isCurrent ? "is-running" : ""}`} aria-hidden="true" />
-            <label className="flow-timing-control">
+            <div className="flow-timing-control" aria-label={`Timing offset for beat ${format2(step.index + 1)}`}>
+              <button
+                type="button"
+                aria-label={`Move beat ${format2(step.index + 1)} earlier`}
+                disabled={timingOffsetTicks <= -3}
+                onClick={() => onAdjustTimingOffset(step.index, -1)}
+              >
+                -
+              </button>
               <span aria-hidden="true">{formatSigned(timingOffsetTicks)}</span>
-              <input
-                type="range"
-                aria-label={`Timing offset for beat ${format2(step.index + 1)}`}
-                min={-3}
-                max={3}
-                step={1}
-                value={timingOffsetTicks}
-                onChange={(event) => onAdjustTimingOffset(step.index, Number(event.target.value) - timingOffsetTicks)}
-              />
-            </label>
+              <button
+                type="button"
+                aria-label={`Move beat ${format2(step.index + 1)} later`}
+                disabled={timingOffsetTicks >= 3}
+                onClick={() => onAdjustTimingOffset(step.index, 1)}
+              >
+                +
+              </button>
+            </div>
           </div>
         );
       })}

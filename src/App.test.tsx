@@ -103,12 +103,13 @@ describe("PO33 NoteMaker app", () => {
   it("adjusts Beat Flow timing from the controls below a step", () => {
     render(<App />);
 
-    fireEvent.change(screen.getByRole("slider", { name: /timing offset for beat 01/i }), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: /move beat 01 later/i }));
+    fireEvent.click(screen.getByRole("button", { name: /move beat 01 later/i }));
 
     expect(screen.getByLabelText(/flow step 01 empty timing late 2/i)).toBeInTheDocument();
     expect(screen.getByText(/\+2/)).toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole("slider", { name: /timing offset for beat 01/i }), { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: /move beat 01 earlier/i }));
 
     expect(screen.getByLabelText(/flow step 01 empty timing late 1/i)).toBeInTheDocument();
   });
