@@ -20,7 +20,6 @@ export default function App() {
     setTempo,
     setParamMode,
     setKnobValue,
-    importSampleFile,
     importProject,
     setImportError,
     resetProject
@@ -98,7 +97,6 @@ export default function App() {
       onTempoChange={setTempo}
       onParamModeChange={setParamMode}
       onKnobChange={setKnobValue}
-      onImportSample={importSampleFile}
       onImportProject={importProject}
       onImportError={setImportError}
       onExportProject={() => downloadProject({ ...project, chain: { patternIds: schedulePlan.length ? project.chain.patternIds : [project.activePatternId] } })}

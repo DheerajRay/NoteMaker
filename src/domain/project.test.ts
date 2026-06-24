@@ -73,6 +73,34 @@ describe("PO33 project model", () => {
     expect(parsed.slots[0].sample?.rootMidi).toBe(36);
   });
 
+  it("falls back to bundled samples when a saved slot contains an imported sound", () => {
+    const project = createDefaultProject();
+    const savedWithImportedSound = {
+      ...project,
+      slots: project.slots.map((slot) =>
+        slot.id === 1
+          ? {
+              ...slot,
+              name: "Accidental Import",
+              sample: {
+                id: "sample-accidental",
+                name: "Accidental Import",
+                sourceType: "imported",
+                durationSeconds: 1.2,
+                rootMidi: 60
+              }
+            }
+          : slot
+      )
+    };
+
+    const parsed = parseProject(JSON.stringify(savedWithImportedSound));
+
+    expect(parsed.slots[0].name).toBe("Mono Bass");
+    expect(parsed.slots[0].sample?.sourceType).toBe("starter");
+    expect(parsed.slots[0].sample?.url).toBe("/audio/starter/01-mono-bass.wav");
+  });
+
   it("rejects unsupported project versions", () => {
     expect(() => parseProject(JSON.stringify({ version: "notemaker.project.v1" }))).toThrow(
       "Unsupported NoteMaker project version"

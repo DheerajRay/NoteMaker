@@ -20,7 +20,6 @@ type Po33DeviceProps = {
   onTempoChange: (tempo: number) => void;
   onParamModeChange: (mode: ParamMode) => void;
   onKnobChange: (knob: "a" | "b", value: number) => void;
-  onImportSample: (file: File | undefined) => void | Promise<void>;
   onImportProject: (project: Project) => void;
   onImportError: (message: string) => void;
   onExportProject: () => void;
@@ -54,7 +53,6 @@ export function Po33Device({
   onTempoChange,
   onParamModeChange,
   onKnobChange,
-  onImportSample,
   onImportProject,
   onImportError,
   onExportProject,
@@ -141,11 +139,9 @@ export function Po33Device({
             <button type="button" className="help-key icon-control" aria-label="Open tool guide" title="Tool guide" onClick={() => setGuideOpen(true)}>
               <Icon glyph="info" />
             </button>
-            <label className="file-control icon-control" title="Import sound">
+            <button type="button" className="icon-control" aria-label="Sound import paused" title="Sound import paused" disabled>
               <Icon glyph="sound" />
-              <span className="sr-only">import sound</span>
-              <input type="file" accept="audio/*" onChange={(event) => void onImportSample(event.target.files?.[0])} />
-            </label>
+            </button>
             <label className="file-control icon-control" title="Import project">
               <Icon glyph="import" />
               <span className="sr-only">import project</span>
@@ -456,7 +452,7 @@ function ToolGuide({ onClose }: { onClose: () => void }) {
           <GuideItem title="3. Write steps" body="Turn write on, then click steps to place or remove the selected slot in the active pattern. Play is silent until events is above 0." />
           <GuideItem title="4. Shape the sound" body="Trim, tone, and filter change what knobs A and B do for the selected slot." />
           <GuideItem title="5. Switch patterns" body="The pattern bank stores separate 16-step ideas. Choose another pattern to build a different loop." />
-          <GuideItem title="6. Save and import" body="Import sound loads audio into the selected slot. Export project saves the current machine state as JSON." />
+          <GuideItem title="6. Save and export" body="Sound import is paused for now. Export project saves the current machine state as JSON." />
         </div>
       </section>
     </div>
@@ -532,10 +528,10 @@ const DEMO_STEPS: DemoStep[] = [
   },
   {
     id: "files",
-    title: "8. Import and export",
-    target: "import sound / project",
+    title: "8. Save and export",
+    target: "project import / export",
     body:
-      "Import sound loads an audio file into the selected slot. Import project restores a saved JSON machine state. Export project downloads the current slots, patterns, tempo, and chain.",
+      "Sound import is paused for now. Import project restores a saved JSON machine state. Export project downloads the current slots, patterns, tempo, and chain.",
     showLabel: "Review file buttons"
   }
 ];

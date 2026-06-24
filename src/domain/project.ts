@@ -233,15 +233,15 @@ function createSlices() {
 
 function normalizeSlot(slot: SoundSlot): SoundSlot {
   const fallback = createSlot(STARTER_SOUNDS[clamp((slot.id ?? 1) - 1, 0, SLOT_COUNT - 1)]);
-  const sample = slot.sample?.sourceType === "imported"
-    ? slot.sample
-    : slot.sample && fallback.sample
-      ? { ...fallback.sample, ...slot.sample }
-      : fallback.sample;
+  const importedSampleDisabled = slot.sample?.sourceType === "imported";
+  const sample = !importedSampleDisabled && slot.sample && fallback.sample
+    ? { ...fallback.sample, ...slot.sample }
+    : fallback.sample;
   return {
     ...fallback,
     ...slot,
     sample,
+    name: importedSampleDisabled ? fallback.name : slot.name ?? fallback.name,
     id: clamp(Math.round(slot.id ?? fallback.id), 1, SLOT_COUNT),
     type: slot.type === "drum" ? "drum" : "melodic",
     trimStart: clamp(slot.trimStart ?? fallback.trimStart, 0, 1),

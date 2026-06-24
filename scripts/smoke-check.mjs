@@ -5,7 +5,6 @@ import { chromium } from "playwright";
 
 const baseUrl = process.env.SMOKE_BASE_URL ?? "http://127.0.0.1:5173";
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const fixturePath = join(projectRoot, "public", "audio", "starter", "09-kick.wav");
 const outputDir = join(projectRoot, "test-results");
 const failures = [];
 const browserErrors = [];
@@ -71,11 +70,10 @@ await desktop.locator('input[type="file"][accept*="application/json"]').setInput
 });
 await desktop.getByText(/could not import this project/i).waitFor();
 
+check(await desktop.getByRole("button", { name: /sound import paused/i }).isDisabled(), "Sound import must be paused.");
 await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
-await desktop.locator('input[type="file"][accept="audio/*"]').setInputFiles(fixturePath);
-await desktop.getByRole("button", { name: /slot 01 09-kick/i }).waitFor();
 await desktop.reload({ waitUntil: "networkidle" });
-await desktop.getByRole("button", { name: /slot 01 09-kick/i }).click();
+await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
 await desktop.getByRole("button", { name: /key 11/i }).click();
 await desktop.waitForTimeout(150);
 

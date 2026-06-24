@@ -1,10 +1,8 @@
 import { create } from "zustand";
-import { importAudioFile } from "../audio/sampleImport";
 import {
   adjustStepTimingOffset,
   createDefaultProject,
   loadProjectFromStorage,
-  replaceSlotSample,
   removeStepTrigger,
   saveProjectToStorage,
   selectPattern,
@@ -99,15 +97,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   importSampleFile: async (file) => {
     if (!file) return;
-    try {
-      const sample = await importAudioFile(file);
-      const { project } = get();
-      const next = replaceSlotSample(project, project.activeSlotId, sample);
-      saveProjectToStorage(next);
-      set({ project: next, importError: null });
-    } catch (error) {
-      set({ importError: error instanceof Error ? error.message : "Could not import this audio file." });
-    }
+    set({ importError: "Sound import is paused while the sample workflow is redesigned." });
   },
 
   importProject: (project) => {

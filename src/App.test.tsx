@@ -33,7 +33,7 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByText(/choose the sound source/i)).toBeInTheDocument();
     expect(screen.getByText(/choose the pitch that gets auditioned or written/i)).toBeInTheDocument();
     expect(screen.getByText(/switch between 16 separate loops/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/import sound/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sound import paused/i })).toBeDisabled();
     expect(screen.getByTitle(/import project/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /export project/i })).toBeInTheDocument();
     expect(screen.queryByLabelText(/project controls/i)).not.toBeInTheDocument();
@@ -123,14 +123,11 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByRole("button", { name: /techno tempo 140 bpm/i })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("shows an error when a selected sound file is not audio", async () => {
+  it("keeps sound import paused", async () => {
     render(<App />);
 
-    const input = screen.getByTitle(/import sound/i).querySelector("input");
-    expect(input).not.toBeNull();
-    fireEvent.change(input!, { target: { files: [new File(["text"], "notes.txt", { type: "text/plain" })] } });
-
-    expect(await screen.findByText(/choose an audio file for this slot/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sound import paused/i })).toBeDisabled();
+    expect(screen.queryByTitle(/import sound/i)).not.toBeInTheDocument();
   });
 
   it("shows an error when a project file is malformed", async () => {
