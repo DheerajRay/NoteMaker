@@ -379,7 +379,7 @@ h2 {
 .flow-timing-control {
   position: absolute;
   bottom: 4px;
-  left: 50%;
+  left: 45%;
   width: min(54px, calc(100% - 12px));
   min-height: 18px;
   display: inline-grid;
@@ -1022,22 +1022,23 @@ h2 {
 
   .flow-timing-control {
     bottom: 3px;
-    width: min(48px, calc(100% - 10px));
+    left: 50%;
+    width: min(36px, calc(100% - 8px));
     min-height: 16px;
-    grid-template-columns: 14px 1fr 14px;
+    grid-template-columns: 11px 1fr 11px;
     gap: 1px;
   }
 
   .flow-timing-control span {
-    min-width: 16px;
-    font-size: 0.54rem;
+    min-width: 12px;
+    font-size: 0.5rem;
   }
 
   .flow-timing-control button {
-    min-width: 14px;
+    min-width: 11px;
     min-height: 16px;
-    width: 14px;
-    font-size: 0.74rem;
+    width: 11px;
+    font-size: 0.68rem;
   }
 
   .step-led-bank {
