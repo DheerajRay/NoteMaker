@@ -53,6 +53,7 @@ export type LockedParams = Partial<Pick<SoundSlot, "trimStart" | "trimEnd" | "ga
 export type PatternStep = {
   index: number;
   triggers: StepTrigger[];
+  timingOffsetTicks: number;
   lockedParams?: Record<number, LockedParams>;
   fx?: string;
 };

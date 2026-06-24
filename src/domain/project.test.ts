@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultProject, parseProject, serializeProject, toggleStepTrigger, updateSlotParams } from "./project";
+import { adjustStepTimingOffset, createDefaultProject, parseProject, serializeProject, toggleStepTrigger, updateSlotParams } from "./project";
 import { PROJECT_VERSION } from "./types";
 
 describe("PO33 project model", () => {
@@ -38,12 +38,23 @@ describe("PO33 project model", () => {
     expect(slot.pitch).toBe(-24);
   });
 
+  it("adjusts step timing offsets inside safe ranges", () => {
+    const project = createDefaultProject();
+    const nudgedLate = adjustStepTimingOffset(project, 0, 2);
+    const nudgedEarly = adjustStepTimingOffset(nudgedLate, 0, -9);
+
+    expect(nudgedLate.patterns[0].steps[0].timingOffsetTicks).toBe(2);
+    expect(nudgedEarly.patterns[0].steps[0].timingOffsetTicks).toBe(-3);
+    expect(nudgedEarly.patterns[0].steps[1].timingOffsetTicks).toBe(0);
+  });
+
   it("round-trips the new project format", () => {
     const project = toggleStepTrigger(createDefaultProject(), 4, 9, 3);
     const parsed = parseProject(serializeProject(project));
 
     expect(parsed.version).toBe("notemaker.po33.v1");
     expect(parsed.patterns[0].steps[4].triggers[0]).toMatchObject({ slotId: 9, keyIndex: 3 });
+    expect(parsed.patterns[0].steps[4].timingOffsetTicks).toBe(0);
   });
 
   it("restores bundled metadata for starter sounds saved by older builds", () => {

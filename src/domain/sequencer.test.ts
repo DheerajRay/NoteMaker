@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultProject, toggleStepTrigger, updateSlotParams } from "./project";
+import { adjustStepTimingOffset, createDefaultProject, toggleStepTrigger, updateSlotParams } from "./project";
 import { createSchedulePlan, stepToSeconds, stepToToneTime } from "./sequencer";
 
 describe("PO33 sequencer timing", () => {
@@ -13,6 +13,20 @@ describe("PO33 sequencer timing", () => {
   it("converts 16th-note steps at the current tempo", () => {
     expect(stepToSeconds(4, 120)).toBe(0.5);
     expect(stepToSeconds(1, 60)).toBe(0.25);
+  });
+
+  it("converts step timing offset ticks into seconds", () => {
+    const project = updateSlotParams(
+      adjustStepTimingOffset(toggleStepTrigger(createDefaultProject(), 4, 9, 1), 4, 2),
+      9,
+      {}
+    );
+    const [event] = createSchedulePlan({ ...project, tempo: 120 });
+
+    expect(event.seconds).toBe(0.5);
+    expect(event.timingOffsetTicks).toBe(2);
+    expect(event.timingOffsetSeconds).toBeCloseTo(0.041666, 5);
+    expect(event.scheduledSeconds).toBeCloseTo(0.541666, 5);
   });
 });
 

@@ -16,6 +16,7 @@ export default function App() {
     toggleWriteMode,
     toggleStep,
     removeTrigger,
+    adjustTimingOffset,
     setTempo,
     setParamMode,
     setKnobValue,
@@ -93,6 +94,7 @@ export default function App() {
       onToggleWrite={toggleWriteMode}
       onToggleStep={toggleStep}
       onRemoveTrigger={removeTrigger}
+      onAdjustTimingOffset={adjustTimingOffset}
       onTempoChange={setTempo}
       onParamModeChange={setParamMode}
       onKnobChange={setKnobValue}

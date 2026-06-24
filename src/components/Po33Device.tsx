@@ -16,6 +16,7 @@ type Po33DeviceProps = {
   onToggleWrite: () => void;
   onToggleStep: (stepIndex: number) => void;
   onRemoveTrigger: (stepIndex: number, slotId: number, keyIndex: number) => void;
+  onAdjustTimingOffset: (stepIndex: number, deltaTicks: number) => void;
   onTempoChange: (tempo: number) => void;
   onParamModeChange: (mode: ParamMode) => void;
   onKnobChange: (knob: "a" | "b", value: number) => void;
@@ -49,6 +50,7 @@ export function Po33Device({
   onToggleWrite,
   onToggleStep,
   onRemoveTrigger,
+  onAdjustTimingOffset,
   onTempoChange,
   onParamModeChange,
   onKnobChange,
@@ -183,6 +185,7 @@ export function Po33Device({
             pattern={activePattern}
             playing={playing}
             slots={project.slots}
+            onAdjustTimingOffset={onAdjustTimingOffset}
             onRemoveTrigger={onRemoveTrigger}
           />
         </section>
@@ -361,12 +364,14 @@ function getActionHint({
 function BeatFlowStrip({
   currentStep,
   onRemoveTrigger,
+  onAdjustTimingOffset,
   pattern,
   playing,
   slots
 }: {
   currentStep: number;
   onRemoveTrigger: (stepIndex: number, slotId: number, keyIndex: number) => void;
+  onAdjustTimingOffset: (stepIndex: number, deltaTicks: number) => void;
   pattern: Project["patterns"][number];
   playing: boolean;
   slots: SoundSlot[];
@@ -375,6 +380,8 @@ function BeatFlowStrip({
     <div className="beat-flow-strip" aria-label="Beat flow timeline">
       {pattern.steps.map((step) => {
         const isCurrent = step.index === currentStep;
+        const timingOffsetTicks = step.timingOffsetTicks ?? 0;
+        const timingDirection = timingOffsetTicks < 0 ? `early ${Math.abs(timingOffsetTicks)}` : timingOffsetTicks > 0 ? `late ${timingOffsetTicks}` : "centered";
         const triggerSlots = step.triggers.map((trigger) => ({
           trigger,
           slot: slots.find((slot) => slot.id === trigger.slotId) ?? null
@@ -383,7 +390,7 @@ function BeatFlowStrip({
           <div
             key={step.index}
             className={`flow-step ${isCurrent ? "is-current" : ""} ${triggerSlots.length ? "has-events" : ""}`}
-            aria-label={`Flow step ${format2(step.index + 1)} ${step.triggers.length ? `${step.triggers.length} sounds` : "empty"}`}
+            aria-label={`Flow step ${format2(step.index + 1)} ${step.triggers.length ? `${step.triggers.length} sounds` : "empty"} timing ${timingDirection}`}
           >
             <span className="flow-step-number">{format2(step.index + 1)}</span>
             <div className="flow-lane">
@@ -404,6 +411,18 @@ function BeatFlowStrip({
               )}
             </div>
             <span className={`flow-playhead ${playing && isCurrent ? "is-running" : ""}`} aria-hidden="true" />
+            <label className="flow-timing-control">
+              <span aria-hidden="true">{formatSigned(timingOffsetTicks)}</span>
+              <input
+                type="range"
+                aria-label={`Timing offset for beat ${format2(step.index + 1)}`}
+                min={-3}
+                max={3}
+                step={1}
+                value={timingOffsetTicks}
+                onChange={(event) => onAdjustTimingOffset(step.index, Number(event.target.value) - timingOffsetTicks)}
+              />
+            </label>
           </div>
         );
       })}
@@ -708,4 +727,8 @@ function noteNameForMidi(midi: number): string {
 
 function format2(value: number): string {
   return String(value).padStart(2, "0");
+}
+
+function formatSigned(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
 }

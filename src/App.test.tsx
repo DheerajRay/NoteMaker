@@ -100,6 +100,19 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByRole("button", { name: /remove slot 10 snare from beat 01/i })).toBeInTheDocument();
   });
 
+  it("adjusts Beat Flow timing from the controls below a step", () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByRole("slider", { name: /timing offset for beat 01/i }), { target: { value: "2" } });
+
+    expect(screen.getByLabelText(/flow step 01 empty timing late 2/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+2/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("slider", { name: /timing offset for beat 01/i }), { target: { value: "1" } });
+
+    expect(screen.getByLabelText(/flow step 01 empty timing late 1/i)).toBeInTheDocument();
+  });
+
   it("changes tempo by category", () => {
     render(<App />);
 

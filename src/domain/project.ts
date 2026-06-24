@@ -5,6 +5,8 @@ const STORAGE_KEY = "notemaker.po33.v1.current";
 const SLOT_COUNT = 16;
 const PATTERN_COUNT = 16;
 const STEPS_PER_PATTERN = 16;
+const MIN_TIMING_OFFSET_TICKS = -3;
+const MAX_TIMING_OFFSET_TICKS = 3;
 
 export function createDefaultProject(): Project {
   const now = new Date().toISOString();
@@ -110,6 +112,30 @@ export function removeStepTrigger(project: Project, stepIndex: number, slotId: n
   return removed ? touch({ ...project, patterns }) : project;
 }
 
+export function adjustStepTimingOffset(project: Project, stepIndex: number, deltaTicks: number): Project {
+  const safeStep = clamp(Math.round(stepIndex), 0, STEPS_PER_PATTERN - 1);
+  const safeDelta = Math.round(deltaTicks);
+  const patternIndex = project.patterns.findIndex((pattern) => pattern.id === project.activePatternId);
+  if (patternIndex < 0 || safeDelta === 0) return project;
+
+  const patterns = project.patterns.map((pattern, index) => {
+    if (index !== patternIndex) return pattern;
+    return {
+      ...pattern,
+      steps: pattern.steps.map((step) =>
+        step.index === safeStep
+          ? {
+              ...step,
+              timingOffsetTicks: clamp((step.timingOffsetTicks ?? 0) + safeDelta, MIN_TIMING_OFFSET_TICKS, MAX_TIMING_OFFSET_TICKS)
+            }
+          : step
+      )
+    };
+  });
+
+  return touch({ ...project, patterns });
+}
+
 export function updateSlotParams(project: Project, slotId: number, params: Partial<Pick<SoundSlot, "trimStart" | "trimEnd" | "gain" | "pitch" | "filter" | "resonance">>): Project {
   const slots = project.slots.map((slot) => {
     if (slot.id !== slotId) return slot;
@@ -193,7 +219,7 @@ function createSlot(definition: (typeof STARTER_SOUNDS)[number]): SoundSlot {
 function createPattern(id: number): Pattern {
   return {
     id,
-    steps: Array.from({ length: STEPS_PER_PATTERN }, (_, index) => ({ index, triggers: [] }))
+    steps: Array.from({ length: STEPS_PER_PATTERN }, (_, index) => ({ index, triggers: [], timingOffsetTicks: 0 }))
   };
 }
 
@@ -244,6 +270,7 @@ function normalizeSteps(steps: PatternStep[]): PatternStep[] {
     return {
       index,
       triggers: Array.isArray(step?.triggers) ? step.triggers : [],
+      timingOffsetTicks: clamp(Math.round(step?.timingOffsetTicks ?? 0), MIN_TIMING_OFFSET_TICKS, MAX_TIMING_OFFSET_TICKS),
       lockedParams: step?.lockedParams,
       fx: step?.fx
     };

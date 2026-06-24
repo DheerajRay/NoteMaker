@@ -4,6 +4,7 @@ import type { SlotType } from "./types";
 
 export const STEPS_PER_PATTERN = 16;
 export const STEPS_PER_BAR = 4;
+export const TIMING_TICKS_PER_STEP = 6;
 
 export type SchedulePlanEntry = {
   patternId: number;
@@ -15,6 +16,9 @@ export type SchedulePlanEntry = {
   slotType: SlotType;
   toneTime: string;
   seconds: number;
+  scheduledSeconds: number;
+  timingOffsetTicks: number;
+  timingOffsetSeconds: number;
   durationSeconds: number;
   durationScale: number;
   trimStart: number;
@@ -39,6 +43,11 @@ export function stepToSeconds(step: number, tempo: number): number {
   return step * secondsPerStep;
 }
 
+export function timingOffsetTicksToSeconds(timingOffsetTicks: number, tempo: number): number {
+  const secondsPerStep = 60 / tempo / 4;
+  return (Math.round(timingOffsetTicks) / TIMING_TICKS_PER_STEP) * secondsPerStep;
+}
+
 export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
   const pattern = project.patterns.find((candidate) => candidate.id === project.activePatternId);
   if (!pattern) return [];
@@ -49,6 +58,9 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
       if (!slot?.sample) return [];
       const trimSpan = Math.max(slot.trimEnd - slot.trimStart, 0.01);
       const drumVariation = slot.type === "drum" ? drumVariationForKey(trigger.keyIndex) : null;
+      const seconds = stepToSeconds(step.index, project.tempo);
+      const timingOffsetTicks = step.timingOffsetTicks ?? 0;
+      const timingOffsetSeconds = timingOffsetTicksToSeconds(timingOffsetTicks, project.tempo);
       return {
         patternId: pattern.id,
         stepIndex: step.index,
@@ -58,7 +70,10 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
         sampleName: slot.sample.name,
         slotType: slot.type,
         toneTime: stepToToneTime(step.index),
-        seconds: stepToSeconds(step.index, project.tempo),
+        seconds,
+        scheduledSeconds: Math.max(seconds + timingOffsetSeconds, 0),
+        timingOffsetTicks,
+        timingOffsetSeconds,
         durationSeconds: Math.max(slot.sample.durationSeconds * trimSpan * (drumVariation?.durationScale ?? 1), 0.05),
         durationScale: drumVariation?.durationScale ?? 1,
         trimStart: slot.trimStart,

@@ -87,7 +87,7 @@ export class NoteMakerAudioEngine {
     this.tone.Transport.loopEnd = "1:0:0";
 
     for (const entry of plan) {
-      const scheduledId = this.tone.Transport.schedule((time) => this.triggerEntry(entry, time), entry.toneTime);
+      const scheduledId = this.tone.Transport.schedule((time) => this.triggerEntry(entry, time), entry.scheduledSeconds);
       this.scheduledIds.push(scheduledId);
     }
     return plan;
@@ -292,6 +292,9 @@ function previewEntry(project: Project, slot: SoundSlot, keyIndex: number): Sche
     slotType: slot.type,
     toneTime: "0:0:0",
     seconds: 0,
+    scheduledSeconds: 0,
+    timingOffsetTicks: 0,
+    timingOffsetSeconds: 0,
     durationSeconds: Math.max(sample.durationSeconds * trimSpan * (drumVariation?.durationScale ?? 1), 0.05),
     durationScale: drumVariation?.durationScale ?? 1,
     trimStart: slot.trimStart,

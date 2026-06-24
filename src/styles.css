@@ -272,11 +272,11 @@ h2 {
 }
 
 .flow-step {
-  min-height: 92px;
+  min-height: 112px;
   position: relative;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 7px;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 5px;
   padding: 8px 5px 6px;
   border: 1px solid #15110d;
   border-radius: 12px;
@@ -364,6 +364,29 @@ h2 {
 .flow-playhead.is-running {
   background: #e8ff7d;
   box-shadow: 0 0 14px rgba(232, 255, 125, 0.72);
+}
+
+.flow-timing-control {
+  display: grid;
+  gap: 2px;
+  align-items: center;
+}
+
+.flow-timing-control span {
+  color: #15110d;
+  font-size: 0.56rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.flow-step:not(.has-events) .flow-timing-control span {
+  color: #f7c98e;
+}
+
+.flow-timing-control input {
+  width: 100%;
+  min-height: 10px;
+  accent-color: #62a6d7;
 }
 
 .empty-pattern-hint {
@@ -931,7 +954,7 @@ h2 {
   }
 
   .flow-step {
-    min-height: 72px;
+    min-height: 92px;
     gap: 4px;
     padding: 6px 4px 5px;
     border-radius: 10px;
@@ -953,6 +976,14 @@ h2 {
   .flow-remove-mark {
     width: 9px;
     height: 9px;
+    font-size: 0.5rem;
+  }
+
+  .flow-timing-control {
+    gap: 1px;
+  }
+
+  .flow-timing-control span {
     font-size: 0.5rem;
   }
 
