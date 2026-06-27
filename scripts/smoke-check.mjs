@@ -40,6 +40,7 @@ await desktop.reload({ waitUntil: "networkidle" });
 await desktop.getByRole("heading", { name: "NoteMaker" }).waitFor();
 check(await desktop.getByRole("button", { name: /^step \d{2}$/i }).count() === 16, "Desktop must expose 16 step buttons.");
 check(await desktop.getByRole("button", { name: /^slot \d{2}/i }).count() === 16, "Desktop must expose 16 sound slots.");
+check(await desktop.getByLabel("Sound slots page 01-16").isVisible(), "Sound slots must start on page 01-16.");
 
 await desktop.getByRole("button", { name: /write mode/i }).click();
 await desktop.getByRole("button", { name: /slot 09 kick/i }).click();
@@ -70,8 +71,18 @@ await desktop.locator('input[type="file"][accept*="application/json"]').setInput
 });
 await desktop.getByText(/could not import this project/i).waitFor();
 
-check(await desktop.getByRole("button", { name: /sound import paused/i }).isDisabled(), "Sound import must be paused.");
+check(await desktop.getByRole("button", { name: /sound import paused/i }).count() === 0, "Top-bar sound import must be removed.");
 await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
+await desktop.getByRole("button", { name: /next sound slot page/i }).click();
+await desktop.getByRole("button", { name: /slot 17 velvet keys/i }).click();
+await desktop.getByRole("button", { name: /key 05/i }).click();
+await desktop.getByRole("button", { name: /^step 02$/i }).click();
+await desktop.getByRole("button", { name: /next sound slot page/i }).click();
+await desktop.getByRole("button", { name: /slot 33 808 kick/i }).click();
+await desktop.getByRole("button", { name: /key 01/i }).click();
+await desktop.getByRole("button", { name: /^step 03$/i }).click();
+check(await desktop.getByRole("button", { name: /add sound import planned/i }).isDisabled(), "Add Sound placeholder must be disabled.");
+check(await desktop.getByRole("button", { name: /next sound slot page/i }).isDisabled(), "Last sound page must disable next.");
 await desktop.reload({ waitUntil: "networkidle" });
 await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
 await desktop.getByRole("button", { name: /key 11/i }).click();
@@ -94,6 +105,7 @@ const metrics = await mobile.evaluate(() => ({
   scrollHeight: document.documentElement.scrollHeight,
   undersized: Array.from(document.querySelectorAll("button"))
     .filter((button) => !button.closest(".flow-timing-control"))
+    .filter((button) => !button.closest(".flow-trigger"))
     .map((button) => {
       const bounds = button.getBoundingClientRect();
       return { label: button.getAttribute("aria-label") ?? button.textContent?.trim(), width: bounds.width, height: bounds.height };

@@ -2,7 +2,8 @@ import { STARTER_SOUNDS } from "./starterSounds";
 import { PROJECT_VERSION, type ParamMode, type Pattern, type PatternStep, type Project, type SampleAsset, type SoundSlot } from "./types";
 
 const STORAGE_KEY = "notemaker.po33.v1.current";
-const SLOT_COUNT = 16;
+const SLOT_COUNT = 48;
+const PERFORMANCE_KEY_COUNT = 16;
 const PATTERN_COUNT = 16;
 const STEPS_PER_PATTERN = 16;
 const MIN_TIMING_OFFSET_TICKS = -3;
@@ -45,14 +46,17 @@ export function parseProject(source: string): Project {
   if (!Array.isArray(parsed.slots) || !Array.isArray(parsed.patterns)) {
     throw new Error("Invalid NoteMaker project document");
   }
+  const slots = normalizeSlots(parsed.slots);
+  const activeSlotId = clamp(Math.round(parsed.activeSlotId ?? 1), 1, SLOT_COUNT);
+  const activeSlot = slots.find((slot) => slot.id === activeSlotId);
   return {
     ...createDefaultProject(),
     ...parsed,
     tempo: clamp(Math.round(parsed.tempo ?? 112), 60, 240),
     activePatternId: clamp(Math.round(parsed.activePatternId ?? 1), 1, PATTERN_COUNT),
-    activeSlotId: clamp(Math.round(parsed.activeSlotId ?? 1), 1, SLOT_COUNT),
+    activeSlotId: activeSlot?.sample ? activeSlotId : 1,
     paramMode: normalizeParamMode(parsed.paramMode),
-    slots: parsed.slots.map(normalizeSlot).slice(0, SLOT_COUNT),
+    slots,
     patterns: parsed.patterns.map(normalizePattern).slice(0, PATTERN_COUNT),
     chain: parsed.chain?.patternIds?.length ? parsed.chain : { patternIds: [parsed.activePatternId ?? 1] }
   };
@@ -61,7 +65,9 @@ export function parseProject(source: string): Project {
 export function toggleStepTrigger(project: Project, stepIndex: number, slotId: number, keyIndex: number): Project {
   const safeStep = clamp(Math.round(stepIndex), 0, STEPS_PER_PATTERN - 1);
   const safeSlotId = clamp(Math.round(slotId), 1, SLOT_COUNT);
-  const safeKeyIndex = clamp(Math.round(keyIndex), 1, SLOT_COUNT);
+  const safeKeyIndex = clamp(Math.round(keyIndex), 1, PERFORMANCE_KEY_COUNT);
+  const slot = project.slots.find((candidate) => candidate.id === safeSlotId);
+  if (!slot?.sample) return project;
   const patternIndex = project.patterns.findIndex((pattern) => pattern.id === project.activePatternId);
   if (patternIndex < 0) return project;
 
@@ -88,7 +94,7 @@ export function toggleStepTrigger(project: Project, stepIndex: number, slotId: n
 export function removeStepTrigger(project: Project, stepIndex: number, slotId: number, keyIndex: number): Project {
   const safeStep = clamp(Math.round(stepIndex), 0, STEPS_PER_PATTERN - 1);
   const safeSlotId = clamp(Math.round(slotId), 1, SLOT_COUNT);
-  const safeKeyIndex = clamp(Math.round(keyIndex), 1, SLOT_COUNT);
+  const safeKeyIndex = clamp(Math.round(keyIndex), 1, PERFORMANCE_KEY_COUNT);
   const patternIndex = project.patterns.findIndex((pattern) => pattern.id === project.activePatternId);
   if (patternIndex < 0) return project;
 
@@ -164,7 +170,9 @@ export function replaceSlotSample(project: Project, slotId: number, sample: Samp
 }
 
 export function selectSlot(project: Project, slotId: number): Project {
-  return touch({ ...project, activeSlotId: clamp(Math.round(slotId), 1, SLOT_COUNT) });
+  const safeSlotId = clamp(Math.round(slotId), 1, SLOT_COUNT);
+  const slot = project.slots.find((candidate) => candidate.id === safeSlotId);
+  return slot?.sample ? touch({ ...project, activeSlotId: safeSlotId }) : project;
 }
 
 export function selectPattern(project: Project, patternId: number): Project {
@@ -206,6 +214,7 @@ function createSlot(definition: (typeof STARTER_SOUNDS)[number]): SoundSlot {
     type: definition.type,
     name: definition.name,
     sample: definition.sample,
+    isPlaceholder: definition.isPlaceholder,
     trimStart: 0,
     trimEnd: 1,
     gain: definition.type === "drum" ? 1 : 0.88,
@@ -224,11 +233,18 @@ function createPattern(id: number): Pattern {
 }
 
 function createSlices() {
-  return Array.from({ length: SLOT_COUNT }, (_, index) => ({
+  return Array.from({ length: PERFORMANCE_KEY_COUNT }, (_, index) => ({
     keyIndex: index + 1,
-    trimStart: index / SLOT_COUNT,
-    trimEnd: (index + 1) / SLOT_COUNT
+    trimStart: index / PERFORMANCE_KEY_COUNT,
+    trimEnd: (index + 1) / PERFORMANCE_KEY_COUNT
   }));
+}
+
+function normalizeSlots(slots: SoundSlot[] | undefined): SoundSlot[] {
+  return STARTER_SOUNDS.map((definition) => {
+    const saved = slots?.find((slot) => slot.id === definition.id);
+    return saved ? normalizeSlot(saved) : createSlot(definition);
+  });
 }
 
 function normalizeSlot(slot: SoundSlot): SoundSlot {
@@ -241,9 +257,10 @@ function normalizeSlot(slot: SoundSlot): SoundSlot {
     ...fallback,
     ...slot,
     sample,
-    name: importedSampleDisabled ? fallback.name : slot.name ?? fallback.name,
+    isPlaceholder: fallback.isPlaceholder,
+    name: importedSampleDisabled || fallback.isPlaceholder ? fallback.name : slot.name ?? fallback.name,
     id: clamp(Math.round(slot.id ?? fallback.id), 1, SLOT_COUNT),
-    type: slot.type === "drum" ? "drum" : "melodic",
+    type: fallback.type,
     trimStart: clamp(slot.trimStart ?? fallback.trimStart, 0, 1),
     trimEnd: clamp(slot.trimEnd ?? fallback.trimEnd, 0, 1),
     gain: clamp(slot.gain ?? fallback.gain, 0, 1.5),

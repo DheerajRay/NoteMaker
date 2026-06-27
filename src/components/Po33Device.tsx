@@ -72,6 +72,12 @@ export function Po33Device({
   const [guideOpen, setGuideOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [demoStepIndex, setDemoStepIndex] = useState(0);
+  const [slotPage, setSlotPage] = useState(0);
+  const slotPageCount = Math.max(Math.ceil(project.slots.length / 16), 1);
+  const safeSlotPage = Math.min(slotPage, slotPageCount - 1);
+  const slotPageStart = safeSlotPage * 16;
+  const visibleSlots = project.slots.slice(slotPageStart, slotPageStart + 16);
+  const slotPageLabel = `${format2(slotPageStart + 1)}-${format2(slotPageStart + visibleSlots.length)}`;
 
   async function handleProjectImport(file: File | undefined) {
     if (!file) return;
@@ -138,9 +144,6 @@ export function Po33Device({
           <div className="transport-cluster">
             <button type="button" className="help-key icon-control" aria-label="Open tool guide" title="Tool guide" onClick={() => setGuideOpen(true)}>
               <Icon glyph="info" />
-            </button>
-            <button type="button" className="icon-control" aria-label="Sound import paused" title="Sound import paused" disabled>
-              <Icon glyph="sound" />
             </button>
             <label className="file-control icon-control" title="Import project">
               <Icon glyph="import" />
@@ -234,24 +237,45 @@ export function Po33Device({
             </div>
           </section>
 
-          <section className="slot-bank" aria-label="16 sound slots">
-            <ControlLabel
-              index="3"
-              title="Sound slots"
-              body="choose the sound source: 01-08 melodic, 09-16 drums"
-            />
-            {project.slots.map((slot) => (
+          <section className="slot-bank" aria-label={`Sound slots page ${slotPageLabel}`}>
+            <div className="slot-bank-header">
+              <ControlLabel
+                index="3"
+                title="Sound slots"
+                body={`pick source · ${slotPageLabel}`}
+              />
+              <div className="slot-page-controls" aria-label="Sound slot pages">
+                <button
+                  type="button"
+                  aria-label="Previous sound slot page"
+                  disabled={safeSlotPage === 0}
+                  onClick={() => setSlotPage((page) => Math.max(page - 1, 0))}
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next sound slot page"
+                  disabled={safeSlotPage >= slotPageCount - 1}
+                  onClick={() => setSlotPage((page) => Math.min(page + 1, slotPageCount - 1))}
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+            {visibleSlots.map((slot) => (
               <button
                 type="button"
                 key={slot.id}
-                className={`slot-pad ${slot.id === project.activeSlotId ? "is-selected" : ""}`}
-                aria-label={`Slot ${format2(slot.id)} ${slot.name} ${slot.type}`}
+                className={`slot-pad slot-pad-${slot.type} ${slot.id === project.activeSlotId ? "is-selected" : ""} ${slot.isPlaceholder ? "is-placeholder" : ""}`}
+                aria-label={slot.isPlaceholder ? "Add sound import planned" : `Slot ${format2(slot.id)} ${slot.name} ${slot.type}`}
                 aria-pressed={slot.id === project.activeSlotId}
+                disabled={slot.isPlaceholder}
                 onClick={() => onSelectSlot(slot.id)}
               >
-                <span>{format2(slot.id)}</span>
+                <span>{slot.isPlaceholder ? "+" : format2(slot.id)}</span>
                 <strong>{slot.name}</strong>
-                <small>{slot.type}</small>
+                <small>{slot.isPlaceholder ? "Import planned" : slot.type}</small>
               </button>
             ))}
           </section>
@@ -447,7 +471,7 @@ function ToolGuide({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="guide-grid">
-          <GuideItem title="1. Pick a sound" body="Use the 16 slot pads. Slots 01-08 are melodic sounds, and 09-16 are drum sounds." />
+          <GuideItem title="1. Pick a sound" body="Use the Sound Slots arrows to page through 16 visible sources at a time. The first page keeps the original NoteMaker sounds." />
           <GuideItem title="2. Pick a key" body="The long row of 16 keys chooses the pitch or slice that will be written into the pattern." />
           <GuideItem title="3. Write steps" body="Turn write on, then click steps to place or remove the selected slot in the active pattern. Play is silent until events is above 0." />
           <GuideItem title="4. Shape the sound" body="Trim, tone, and filter change what knobs A and B do for the selected slot." />
@@ -475,7 +499,7 @@ const DEMO_STEPS: DemoStep[] = [
     title: "1. Slot pads",
     target: "16 sound slots",
     body:
-      "Slot pads are the sound bank. Click one pad to choose the sound you are editing or writing. Slots 01-08 act like melodic sample slots, and slots 09-16 act like drum/percussion slots.",
+      "Slot pads are the sound bank. Use the arrows to browse pages of 16 sources, then click one pad to choose the sound you are editing or writing.",
     showLabel: "Select slot 09"
   },
   {

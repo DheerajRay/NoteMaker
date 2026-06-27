@@ -520,6 +520,33 @@ h2 {
   grid-template-columns: repeat(4, minmax(68px, 1fr));
 }
 
+.slot-bank-header {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.slot-bank-header .control-label {
+  grid-column: auto;
+}
+
+.slot-page-controls {
+  display: inline-grid;
+  grid-template-columns: repeat(2, 28px);
+  gap: 4px;
+}
+
+.slot-page-controls button {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+}
+
 .slot-pad {
   min-height: 86px;
   display: grid;
@@ -531,8 +558,14 @@ h2 {
   border-radius: 18px;
 }
 
-.slot-pad:nth-child(n + 9) {
+.slot-pad-drum {
   background: #d7e1bf;
+}
+
+.slot-pad.is-placeholder {
+  border-style: dashed;
+  background: #ffedc7;
+  color: rgba(17, 17, 15, 0.65);
 }
 
 .slot-pad span,
@@ -1075,6 +1108,19 @@ h2 {
   .slot-bank {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
+  }
+
+  .slot-bank-header {
+    gap: 6px;
+  }
+
+  .slot-page-controls {
+    grid-template-columns: repeat(2, 34px);
+  }
+
+  .slot-page-controls button {
+    min-width: 34px;
+    min-height: 34px;
   }
 
   .slot-pad {

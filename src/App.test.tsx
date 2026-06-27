@@ -30,16 +30,44 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.queryByText(/no notes written yet/i)).not.toBeInTheDocument();
     expect(screen.getByText(/tap chip x to remove/i)).toBeInTheDocument();
     expect(screen.getByText(/write mode on: click 1-16/i)).toBeInTheDocument();
-    expect(screen.getByText(/choose the sound source/i)).toBeInTheDocument();
+    expect(screen.getByText(/pick source · 01-16/i)).toBeInTheDocument();
     expect(screen.getByText(/choose the pitch that gets auditioned or written/i)).toBeInTheDocument();
     expect(screen.getByText(/switch between 16 separate loops/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /sound import paused/i })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /sound import paused/i })).not.toBeInTheDocument();
     expect(screen.getByTitle(/import project/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /export project/i })).toBeInTheDocument();
     expect(screen.queryByLabelText(/project controls/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/selected slot details/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /slot 01/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /slot 17/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("pages through expanded sound slots while preserving the first bank", () => {
+    render(<App />);
+
+    expect(screen.getByLabelText(/sound slots page 01-16/i)).toBeInTheDocument();
+    expect(screen.getByText(/pick source · 01-16/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /previous sound slot page/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /slot 01 mono bass melodic/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /next sound slot page/i }));
+
+    expect(screen.getByLabelText(/sound slots page 17-32/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /slot 17 velvet keys melodic/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /slot 32 vocal chop melodic/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /slot 01 mono bass melodic/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /next sound slot page/i }));
+
+    expect(screen.getByLabelText(/sound slots page 33-48/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /slot 47 vinyl dust drum/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add sound import planned/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /next sound slot page/i })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: /previous sound slot page/i }));
+
+    expect(screen.getByLabelText(/sound slots page 17-32/i)).toBeInTheDocument();
   });
 
   it("shows drum variation names on performance keys for drum slots", () => {
@@ -123,10 +151,10 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByRole("button", { name: /techno tempo 140 bpm/i })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("keeps sound import paused", async () => {
+  it("removes top-bar sound import until the add-sound flow is designed", async () => {
     render(<App />);
 
-    expect(screen.getByRole("button", { name: /sound import paused/i })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /sound import paused/i })).not.toBeInTheDocument();
     expect(screen.queryByTitle(/import sound/i)).not.toBeInTheDocument();
   });
 

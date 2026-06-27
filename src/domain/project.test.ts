@@ -3,15 +3,22 @@ import { adjustStepTimingOffset, createDefaultProject, parseProject, serializePr
 import { PROJECT_VERSION } from "./types";
 
 describe("PO33 project model", () => {
-  it("creates a default 16-slot and 16-pattern project", () => {
+  it("creates a default 48-slot and 16-pattern project", () => {
     const project = createDefaultProject();
 
     expect(project.version).toBe(PROJECT_VERSION);
     expect(project.tempo).toBe(112);
-    expect(project.slots).toHaveLength(16);
+    expect(project.slots).toHaveLength(48);
     expect(project.patterns).toHaveLength(16);
     expect(project.slots.slice(0, 8).every((slot) => slot.type === "melodic")).toBe(true);
-    expect(project.slots.slice(8).every((slot) => slot.type === "drum")).toBe(true);
+    expect(project.slots.slice(8, 16).every((slot) => slot.type === "drum")).toBe(true);
+    expect(project.slots.slice(16, 32).every((slot) => slot.type === "melodic")).toBe(true);
+    expect(project.slots.slice(32, 47).every((slot) => slot.type === "drum")).toBe(true);
+    expect(project.slots[0].name).toBe("Mono Bass");
+    expect(project.slots[15].name).toBe("Texture");
+    expect(project.slots[16].name).toBe("Velvet Keys");
+    expect(project.slots[46].name).toBe("Vinyl Dust");
+    expect(project.slots[47]).toMatchObject({ id: 48, name: "Add Sound", sample: null, isPlaceholder: true });
     expect(project.activeSlotId).toBe(1);
     expect(project.activePatternId).toBe(1);
   });
@@ -55,6 +62,17 @@ describe("PO33 project model", () => {
     expect(parsed.version).toBe("notemaker.po33.v1");
     expect(parsed.patterns[0].steps[4].triggers[0]).toMatchObject({ slotId: 9, keyIndex: 3 });
     expect(parsed.patterns[0].steps[4].timingOffsetTicks).toBe(0);
+  });
+
+  it("hydrates missing expanded slots when loading an older 16-slot project", () => {
+    const legacy = createDefaultProject();
+    const parsed = parseProject(serializeProject({ ...legacy, slots: legacy.slots.slice(0, 16) }));
+
+    expect(parsed.slots).toHaveLength(48);
+    expect(parsed.slots[0].name).toBe("Mono Bass");
+    expect(parsed.slots[15].name).toBe("Texture");
+    expect(parsed.slots[16].name).toBe("Velvet Keys");
+    expect(parsed.slots[47]).toMatchObject({ id: 48, name: "Add Sound", sample: null, isPlaceholder: true });
   });
 
   it("restores bundled metadata for starter sounds saved by older builds", () => {
