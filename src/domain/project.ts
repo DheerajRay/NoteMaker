@@ -209,18 +209,27 @@ export function downloadProject(project: Project): void {
 }
 
 function createSlot(definition: (typeof STARTER_SOUNDS)[number]): SoundSlot {
+  const defaultParams = definition.defaultParams ?? {
+    trimStart: 0,
+    trimEnd: 1,
+    gain: definition.type === "drum" ? 1 : 0.88,
+    pitch: 0,
+    filter: 1,
+    resonance: 0
+  };
   return {
     id: definition.id,
     type: definition.type,
     name: definition.name,
     sample: definition.sample,
     isPlaceholder: definition.isPlaceholder,
-    trimStart: 0,
-    trimEnd: 1,
-    gain: definition.type === "drum" ? 1 : 0.88,
-    pitch: 0,
-    filter: 1,
-    resonance: 0,
+    character: definition.character,
+    trimStart: defaultParams.trimStart,
+    trimEnd: defaultParams.trimEnd,
+    gain: defaultParams.gain,
+    pitch: defaultParams.pitch,
+    filter: defaultParams.filter,
+    resonance: defaultParams.resonance,
     slices: definition.type === "drum" ? createSlices() : []
   };
 }
@@ -258,6 +267,7 @@ function normalizeSlot(slot: SoundSlot): SoundSlot {
     ...slot,
     sample,
     isPlaceholder: fallback.isPlaceholder,
+    character: fallback.character,
     name: importedSampleDisabled || fallback.isPlaceholder ? fallback.name : slot.name ?? fallback.name,
     id: clamp(Math.round(slot.id ?? fallback.id), 1, SLOT_COUNT),
     type: fallback.type,

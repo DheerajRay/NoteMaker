@@ -18,8 +18,7 @@ export default function App() {
     removeTrigger,
     adjustTimingOffset,
     setTempo,
-    setParamMode,
-    setKnobValue,
+    setSlotParam,
     importProject,
     setImportError,
     resetProject
@@ -95,8 +94,7 @@ export default function App() {
       onRemoveTrigger={removeTrigger}
       onAdjustTimingOffset={adjustTimingOffset}
       onTempoChange={setTempo}
-      onParamModeChange={setParamMode}
-      onKnobChange={setKnobValue}
+      onSlotParamChange={setSlotParam}
       onImportProject={importProject}
       onImportError={setImportError}
       onExportProject={() => downloadProject({ ...project, chain: { patternIds: schedulePlan.length ? project.chain.patternIds : [project.activePatternId] } })}

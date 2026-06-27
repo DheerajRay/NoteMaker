@@ -33,6 +33,7 @@ export type SoundSlot = {
   name: string;
   sample: SampleAsset | null;
   isPlaceholder?: boolean;
+  character?: string;
   trimStart: number;
   trimEnd: number;
   gain: number;

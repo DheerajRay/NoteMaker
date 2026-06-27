@@ -1,4 +1,6 @@
-import type { SampleAsset, SlotType } from "./types";
+import type { SampleAsset, SlotType, SoundSlot } from "./types";
+
+type StarterDefaultParams = Pick<SoundSlot, "trimStart" | "trimEnd" | "pitch" | "gain" | "filter" | "resonance">;
 
 type StarterSoundDefinition = {
   id: number;
@@ -6,6 +8,8 @@ type StarterSoundDefinition = {
   name: string;
   sample: SampleAsset | null;
   isPlaceholder?: boolean;
+  character?: string;
+  defaultParams?: StarterDefaultParams;
 };
 
 type StarterConfig = {
@@ -70,14 +74,68 @@ const STARTER_CONFIGS: StarterConfig[] = [
   { name: "Add Sound", file: "", durationSeconds: 0, gainCompensation: 1, isPlaceholder: true }
 ];
 
+const PRESET_DETAILS: Array<{ character: string; defaultParams: StarterDefaultParams } | null> = [
+  preset("round bass", 0.02, 0.86, 0, 1.04, 0.78, 0.12),
+  preset("glassy chord", 0, 0.94, 0, 0.72, 0.84, 0.18),
+  preset("dusty lead", 0.01, 0.82, 0, 0.82, 0.76, 0.2),
+  preset("short square", 0, 0.56, 0, 0.78, 0.72, 0.1),
+  preset("tape organ", 0.02, 0.96, 0, 0.7, 0.82, 0.16),
+  preset("soft voice", 0.04, 0.9, 0, 0.74, 0.7, 0.1),
+  preset("bright arcade", 0, 0.5, 0, 0.8, 0.88, 0.08),
+  preset("warm stab", 0, 0.68, 0, 0.76, 0.74, 0.14),
+  preset("tight kick", 0, 0.82, 0, 1.08, 0.82, 0.08),
+  preset("crisp snare", 0, 0.72, 0, 0.92, 0.86, 0.16),
+  preset("short hat", 0, 0.68, 0, 0.68, 0.78, 0.06),
+  preset("open hat", 0, 0.78, 0, 0.64, 0.82, 0.08),
+  preset("wide clap", 0, 0.76, 0, 0.78, 0.84, 0.14),
+  preset("rim tick", 0, 0.64, 0, 0.82, 0.86, 0.1),
+  preset("rubber perc", 0, 0.72, 0, 0.84, 0.78, 0.12),
+  preset("grain texture", 0.02, 0.86, 0, 0.62, 0.66, 0.18),
+  preset("soft keys", 0.02, 0.9, 0, 0.72, 0.76, 0.12),
+  preset("slow strings", 0.04, 0.96, 0, 0.64, 0.68, 0.16),
+  preset("pocket brass", 0, 0.72, 0, 0.78, 0.8, 0.18),
+  preset("breathy flute", 0.03, 0.84, 0, 0.72, 0.74, 0.1),
+  preset("clear kalimba", 0, 0.58, 0, 0.82, 0.86, 0.08),
+  preset("twang pluck", 0, 0.72, 0, 0.78, 0.76, 0.18),
+  preset("wood pluck", 0, 0.62, 0, 0.76, 0.78, 0.12),
+  preset("air choir", 0.05, 0.98, 0, 0.58, 0.64, 0.16),
+  preset("acid bite", 0, 0.58, 0, 0.9, 0.7, 0.34),
+  preset("deep sub", 0.01, 0.88, 0, 1, 0.7, 0.08),
+  preset("round mallet", 0, 0.62, 0, 0.78, 0.78, 0.08),
+  preset("wood marimba", 0, 0.68, 0, 0.78, 0.76, 0.1),
+  preset("muted guitar", 0, 0.62, 0, 0.74, 0.72, 0.1),
+  preset("dust piano", 0.02, 0.9, 0, 0.68, 0.68, 0.14),
+  preset("shimmer pad", 0.06, 0.98, 0, 0.58, 0.62, 0.2),
+  preset("tight vocal", 0.01, 0.62, 0, 0.78, 0.76, 0.1),
+  preset("long low boom", 0, 0.78, 0, 1.12, 0.74, 0.08),
+  preset("dust snap", 0, 0.72, 0, 0.9, 0.78, 0.14),
+  preset("small shaker", 0, 0.62, 0, 0.68, 0.72, 0.06),
+  preset("jingle hit", 0, 0.72, 0, 0.7, 0.82, 0.1),
+  preset("tabla pop", 0, 0.74, 0, 0.86, 0.76, 0.14),
+  preset("dhol body", 0, 0.82, 0, 0.94, 0.72, 0.12),
+  preset("conga tone", 0, 0.74, 0, 0.82, 0.74, 0.1),
+  preset("bongo tick", 0, 0.68, 0, 0.8, 0.78, 0.08),
+  preset("metal cowbell", 0, 0.66, 0, 0.74, 0.7, 0.2),
+  preset("wood knock", 0, 0.58, 0, 0.78, 0.74, 0.08),
+  preset("soft crash", 0, 0.9, 0, 0.58, 0.66, 0.12),
+  preset("ride wash", 0, 0.86, 0, 0.56, 0.7, 0.14),
+  preset("metal ping", 0, 0.7, 0, 0.66, 0.68, 0.24),
+  preset("reverse swell", 0.02, 0.94, 0, 0.62, 0.7, 0.1),
+  preset("vinyl noise", 0, 0.82, 0, 0.56, 0.58, 0.16),
+  null
+];
+
 export const STARTER_SOUNDS: StarterSoundDefinition[] = STARTER_CONFIGS.map((config, index) => {
   const id = index + 1;
   const type = config.type ?? (id <= 8 || (id >= 17 && id <= 32) ? "melodic" : "drum");
+  const presetDetail = PRESET_DETAILS[index];
   return {
     id,
     type,
     name: config.name,
     isPlaceholder: config.isPlaceholder,
+    character: presetDetail?.character,
+    defaultParams: presetDetail?.defaultParams,
     sample: config.isPlaceholder
       ? null
       : {
@@ -93,3 +151,18 @@ export const STARTER_SOUNDS: StarterSoundDefinition[] = STARTER_CONFIGS.map((con
         }
   };
 });
+
+function preset(
+  character: string,
+  trimStart: number,
+  trimEnd: number,
+  pitch: number,
+  gain: number,
+  filter: number,
+  resonance: number
+) {
+  return {
+    character,
+    defaultParams: { trimStart, trimEnd, pitch, gain, filter, resonance }
+  };
+}

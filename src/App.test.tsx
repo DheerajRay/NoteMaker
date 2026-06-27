@@ -43,6 +43,39 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("shows a six-knob sound editor with a center readout", () => {
+    render(<App />);
+
+    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/slot 01 mono bass/i);
+    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/round bass/i);
+    expect(screen.queryByRole("button", { name: /^trim$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^tone$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^filter$/i })).not.toBeInTheDocument();
+
+    for (const name of ["Start", "Length", "Pitch", "Gain", "Filter", "Res"]) {
+      expect(screen.getByRole("slider", { name: new RegExp(name, "i") })).toBeInTheDocument();
+    }
+
+    fireEvent.focus(screen.getByRole("slider", { name: /pitch/i }));
+    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/pitch/i);
+    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/semitones/i);
+
+    fireEvent.change(screen.getByRole("slider", { name: /gain/i }), { target: { value: "1.2" } });
+    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/gain/i);
+    expect(screen.getByRole("slider", { name: /gain/i })).toHaveValue("1.2");
+  });
+
+  it("updates knob values and readout when selecting another slot", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /next sound slot page/i }));
+    fireEvent.click(screen.getByRole("button", { name: /slot 17 velvet keys melodic/i }));
+
+    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/slot 17 velvet keys/i);
+    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/soft keys/i);
+    expect(screen.getByRole("slider", { name: /filter/i })).toHaveValue("0.76");
+  });
+
   it("pages through expanded sound slots while preserving the first bank", () => {
     render(<App />);
 

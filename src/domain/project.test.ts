@@ -19,6 +19,9 @@ describe("PO33 project model", () => {
     expect(project.slots[16].name).toBe("Velvet Keys");
     expect(project.slots[46].name).toBe("Vinyl Dust");
     expect(project.slots[47]).toMatchObject({ id: 48, name: "Add Sound", sample: null, isPlaceholder: true });
+    expect(project.slots[0]).toMatchObject({ character: "round bass", trimStart: 0.02, trimEnd: 0.86, gain: 1.04, filter: 0.78 });
+    expect(project.slots[16]).toMatchObject({ character: "soft keys" });
+    expect(project.slots[32]).toMatchObject({ character: "long low boom", gain: 1.12 });
     expect(project.activeSlotId).toBe(1);
     expect(project.activePatternId).toBe(1);
   });
@@ -72,7 +75,25 @@ describe("PO33 project model", () => {
     expect(parsed.slots[0].name).toBe("Mono Bass");
     expect(parsed.slots[15].name).toBe("Texture");
     expect(parsed.slots[16].name).toBe("Velvet Keys");
+    expect(parsed.slots[16]).toMatchObject({ character: "soft keys", filter: 0.76 });
     expect(parsed.slots[47]).toMatchObject({ id: 48, name: "Add Sound", sample: null, isPlaceholder: true });
+  });
+
+  it("preserves saved slot edits instead of overwriting them with tuned defaults", () => {
+    const project = createDefaultProject();
+    const edited = updateSlotParams(project, 1, { trimStart: 0.31, trimEnd: 0.64, pitch: 7, gain: 0.44, filter: 0.35, resonance: 0.8 });
+
+    const parsed = parseProject(serializeProject(edited));
+
+    expect(parsed.slots[0]).toMatchObject({
+      character: "round bass",
+      trimStart: 0.31,
+      trimEnd: 0.64,
+      pitch: 7,
+      gain: 0.44,
+      filter: 0.35,
+      resonance: 0.8
+    });
   });
 
   it("restores bundled metadata for starter sounds saved by older builds", () => {

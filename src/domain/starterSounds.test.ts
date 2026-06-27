@@ -17,6 +17,10 @@ describe("starter sound registry", () => {
 
     expect(STARTER_SOUNDS.slice(0, 8).every((sound) => Number.isFinite(sound.sample?.rootMidi))).toBe(true);
     expect(playableSounds.every((sound) => (sound.sample?.gainCompensation ?? 0) > 0)).toBe(true);
+    expect(playableSounds.every((sound) => sound.character && sound.defaultParams)).toBe(true);
+    expect(STARTER_SOUNDS[0].defaultParams).toMatchObject({ trimStart: 0.02, trimEnd: 0.86, gain: 1.04, filter: 0.78 });
+    expect(STARTER_SOUNDS[23].character).toMatch(/air/i);
+    expect(STARTER_SOUNDS[32].defaultParams).toMatchObject({ trimStart: 0, trimEnd: 0.78, gain: 1.12 });
     expect(STARTER_SOUNDS[10].sample?.chokeTargets).toEqual([12]);
   });
 });

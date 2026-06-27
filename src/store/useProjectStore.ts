@@ -11,7 +11,9 @@ import {
   toggleStepTrigger,
   updateSlotParams
 } from "../domain/project";
-import type { ParamMode, Project } from "../domain/types";
+import type { ParamMode, Project, SoundSlot } from "../domain/types";
+
+type SlotParamKey = keyof Pick<SoundSlot, "trimStart" | "trimEnd" | "pitch" | "gain" | "filter" | "resonance">;
 
 type ProjectState = {
   project: Project;
@@ -26,7 +28,7 @@ type ProjectState = {
   adjustTimingOffset: (stepIndex: number, deltaTicks: number) => void;
   setTempo: (tempo: number) => void;
   setParamMode: (mode: ParamMode) => void;
-  setKnobValue: (knob: "a" | "b", value: number) => void;
+  setSlotParam: (param: SlotParamKey, value: number) => void;
   importSampleFile: (file: File | undefined) => Promise<void>;
   importProject: (project: Project) => void;
   setImportError: (message: string | null) => void;
@@ -76,23 +78,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       paramMode: mode
     })),
 
-  setKnobValue: (knob, value) => {
+  setSlotParam: (param, value) => {
     const { project } = get();
     const slot = project.slots.find((candidate) => candidate.id === project.activeSlotId);
     if (!slot) return;
-    const params =
-      project.paramMode === "trim"
-        ? knob === "a"
-          ? { trimStart: value }
-          : { trimEnd: value }
-        : project.paramMode === "tone"
-          ? knob === "a"
-            ? { pitch: value }
-            : { gain: value }
-          : knob === "a"
-            ? { filter: value }
-            : { resonance: value };
-    updateProject(set, () => updateSlotParams(project, slot.id, params));
+    updateProject(set, () => updateSlotParams(project, slot.id, { [param]: value }));
   },
 
   importSampleFile: async (file) => {

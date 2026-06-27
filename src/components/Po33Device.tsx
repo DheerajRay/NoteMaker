@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { DRUM_KEY_VARIATIONS, PERFORMANCE_KEY_MIDI } from "../audio/music";
 import { parseProject } from "../domain/project";
 import { createSchedulePlan } from "../domain/sequencer";
-import type { ParamMode, Project, SoundSlot } from "../domain/types";
+import type { Project, SoundSlot } from "../domain/types";
+
+type SlotParamKey = keyof Pick<SoundSlot, "trimStart" | "trimEnd" | "pitch" | "gain" | "filter" | "resonance">;
 
 type Po33DeviceProps = {
   project: Project;
@@ -18,8 +20,7 @@ type Po33DeviceProps = {
   onRemoveTrigger: (stepIndex: number, slotId: number, keyIndex: number) => void;
   onAdjustTimingOffset: (stepIndex: number, deltaTicks: number) => void;
   onTempoChange: (tempo: number) => void;
-  onParamModeChange: (mode: ParamMode) => void;
-  onKnobChange: (knob: "a" | "b", value: number) => void;
+  onSlotParamChange: (param: SlotParamKey, value: number) => void;
   onImportProject: (project: Project) => void;
   onImportError: (message: string) => void;
   onExportProject: () => void;
@@ -28,7 +29,6 @@ type Po33DeviceProps = {
   onStop: () => void;
 };
 
-const PARAM_MODES: ParamMode[] = ["trim", "tone", "filter"];
 const TEMPO_CATEGORIES = [
   { label: "Slow", tempo: 72, description: "spacious" },
   { label: "Hip hop", tempo: 90, description: "head-nod" },
@@ -51,8 +51,7 @@ export function Po33Device({
   onRemoveTrigger,
   onAdjustTimingOffset,
   onTempoChange,
-  onParamModeChange,
-  onKnobChange,
+  onSlotParamChange,
   onImportProject,
   onImportError,
   onExportProject,
@@ -122,8 +121,7 @@ export function Po33Device({
     }
 
     if (stepId === "knobs") {
-      onParamModeChange("tone");
-      onKnobChange("a", Math.min(activeSlot.pitch + 1, 24));
+      onSlotParamChange("pitch", Math.min(activeSlot.pitch + 1, 24));
       return;
     }
 
@@ -219,22 +217,9 @@ export function Po33Device({
               <button type="button" aria-label="Write mode" aria-pressed={project.writeMode} onClick={onToggleWrite}>
                 write
               </button>
-              {PARAM_MODES.map((mode) => (
-                <button
-                  type="button"
-                  key={mode}
-                  aria-pressed={project.paramMode === mode}
-                  onClick={() => onParamModeChange(mode)}
-                >
-                  {mode}
-                </button>
-              ))}
             </div>
 
-            <div className="knob-row" aria-label="Parameter knobs">
-              <Knob slot={activeSlot} knob="a" mode={project.paramMode} onChange={onKnobChange} />
-              <Knob slot={activeSlot} knob="b" mode={project.paramMode} onChange={onKnobChange} />
-            </div>
+            <SoundControls slot={activeSlot} onChange={onSlotParamChange} />
           </section>
 
           <section className="slot-bank" aria-label={`Sound slots page ${slotPageLabel}`}>
@@ -474,7 +459,7 @@ function ToolGuide({ onClose }: { onClose: () => void }) {
           <GuideItem title="1. Pick a sound" body="Use the Sound Slots arrows to page through 16 visible sources at a time. The first page keeps the original NoteMaker sounds." />
           <GuideItem title="2. Pick a key" body="The long row of 16 keys chooses the pitch or slice that will be written into the pattern." />
           <GuideItem title="3. Write steps" body="Turn write on, then click steps to place or remove the selected slot in the active pattern. Play is silent until events is above 0." />
-          <GuideItem title="4. Shape the sound" body="Trim, tone, and filter change what knobs A and B do for the selected slot." />
+          <GuideItem title="4. Shape the sound" body="The six knobs always show the selected slot controls: start, length, pitch, gain, filter, and resonance." />
           <GuideItem title="5. Switch patterns" body="The pattern bank stores separate 16-step ideas. Choose another pattern to build a different loop." />
           <GuideItem title="6. Save and export" body="Sound import is paused for now. Export project saves the current machine state as JSON." />
         </div>
@@ -536,11 +521,11 @@ const DEMO_STEPS: DemoStep[] = [
   },
   {
     id: "knobs",
-    title: "6. Mode and knobs",
-    target: "trim, tone, filter, A, B",
+    title: "6. Sound knobs",
+    target: "six sound controls",
     body:
-      "Trim, tone, and filter choose what knobs A and B control. The knobs always edit the selected slot, so pick the slot first, then shape it.",
-    showLabel: "Move tone A"
+      "The knob cluster edits the selected slot directly. The center display names the slot by default, then explains the focused control while you adjust it.",
+    showLabel: "Move pitch"
   },
   {
     id: "transport",
@@ -670,33 +655,80 @@ function Icon({ glyph }: { glyph: "info" | "sound" | "import" | "export" }) {
   );
 }
 
-function Knob({ slot, knob, mode, onChange }: { slot: SoundSlot; knob: "a" | "b"; mode: ParamMode; onChange: (knob: "a" | "b", value: number) => void }) {
-  const config =
-    mode === "trim"
-      ? knob === "a"
-        ? { label: "A start", min: 0, max: 1, step: 0.01, value: slot.trimStart }
-        : { label: "B length", min: 0, max: 1, step: 0.01, value: slot.trimEnd }
-      : mode === "tone"
-        ? knob === "a"
-          ? { label: "A pitch", min: -24, max: 24, step: 1, value: slot.pitch }
-          : { label: "B gain", min: 0, max: 1.5, step: 0.01, value: slot.gain }
-        : knob === "a"
-          ? { label: "A filter", min: 0, max: 1, step: 0.01, value: slot.filter }
-          : { label: "B res", min: 0, max: 1, step: 0.01, value: slot.resonance };
+const SOUND_KNOBS: Array<{
+  param: SlotParamKey;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  meaning: string;
+}> = [
+  { param: "trimStart", label: "Start", min: 0, max: 1, step: 0.01, unit: "%", meaning: "sample entry point" },
+  { param: "trimEnd", label: "Length", min: 0, max: 1, step: 0.01, unit: "%", meaning: "playback window" },
+  { param: "pitch", label: "Pitch", min: -24, max: 24, step: 1, unit: "st", meaning: "semitones" },
+  { param: "gain", label: "Gain", min: 0, max: 1.5, step: 0.01, unit: "x", meaning: "slot level" },
+  { param: "filter", label: "Filter", min: 0, max: 1, step: 0.01, unit: "%", meaning: "tone cutoff" },
+  { param: "resonance", label: "Res", min: 0, max: 1, step: 0.01, unit: "%", meaning: "filter bite" }
+];
+
+function SoundControls({ slot, onChange }: { slot: SoundSlot; onChange: (param: SlotParamKey, value: number) => void }) {
+  const [activeParam, setActiveParam] = useState<SlotParamKey | null>(null);
+  const activeConfig = SOUND_KNOBS.find((config) => config.param === activeParam);
+  const readoutValue = activeConfig ? formatKnobValue(slot[activeConfig.param], activeConfig.unit) : null;
 
   return (
-    <label className="knob-control">
-      <span>{config.label}</span>
-      <input
-        type="range"
-        min={config.min}
-        max={config.max}
-        step={config.step}
-        value={config.value}
-        onChange={(event) => onChange(knob, Number(event.target.value))}
-      />
-    </label>
+    <div className="sound-controls" aria-label="Sound controls">
+      <div className="sound-readout" aria-live="polite">
+        {activeConfig ? (
+          <>
+            <small>{activeConfig.label}</small>
+            <strong>{readoutValue}</strong>
+            <span>{activeConfig.meaning}</span>
+          </>
+        ) : (
+          <>
+            <small>
+              Slot {format2(slot.id)} {slot.name}
+            </small>
+            <strong>{slot.character ?? (slot.type === "drum" ? "drum source" : "melodic source")}</strong>
+            <span>tuned preset</span>
+          </>
+        )}
+      </div>
+      <div className="knob-grid">
+        {SOUND_KNOBS.map((config) => {
+          const value = slot[config.param];
+          const percent = ((value - config.min) / (config.max - config.min)) * 100;
+          return (
+            <label className="sound-knob" key={config.param} style={{ "--knob-fill": `${percent}%` } as CSSProperties}>
+              <span>{config.label}</span>
+              <input
+                type="range"
+                aria-label={config.label}
+                min={config.min}
+                max={config.max}
+                step={config.step}
+                value={value}
+                onFocus={() => setActiveParam(config.param)}
+                onChange={(event) => {
+                  setActiveParam(config.param);
+                  onChange(config.param, Number(event.target.value));
+                }}
+              />
+              <small>{formatKnobValue(value, config.unit)}</small>
+            </label>
+          );
+        })}
+      </div>
+    </div>
   );
+}
+
+function formatKnobValue(value: number, unit: string): string {
+  if (unit === "%") return `${Math.round(value * 100)}`;
+  if (unit === "st") return `${value > 0 ? "+" : ""}${Math.round(value)} st`;
+  return `${Number(value.toFixed(2))}x`;
 }
 
 function TempoControl({ tempo, onTempoChange }: { tempo: number; onTempoChange: (tempo: number) => void }) {
