@@ -189,11 +189,12 @@ export function Po33Device({
 
         <div className="machine-grid">
           <section className="sequencer-bank" aria-label="Step sequencer">
-            <ControlLabel
-              index="2"
-              title="Step buttons"
-              body="write mode on: click 1-16 to place or remove the selected sound"
-            />
+            <div className="step-bank-header">
+              <ControlLabel index="2" title="Step buttons" body="write on: tap steps" />
+              <button type="button" className="write-header-key" aria-label="Write mode" aria-pressed={project.writeMode} onClick={onToggleWrite}>
+                write
+              </button>
+            </div>
             <div className="step-led-bank" aria-label="16 step LEDs">
               {activePattern.steps.map((step) => {
                 const hasSelectedTrigger = step.triggers.some((trigger) => trigger.slotId === project.activeSlotId);
@@ -211,12 +212,6 @@ export function Po33Device({
                   </button>
                 );
               })}
-            </div>
-
-            <div className="mode-row" aria-label="Mode controls">
-              <button type="button" aria-label="Write mode" aria-pressed={project.writeMode} onClick={onToggleWrite}>
-                write
-              </button>
             </div>
 
             <SoundControls slot={activeSlot} onChange={onSlotParamChange} />
@@ -524,7 +519,7 @@ const DEMO_STEPS: DemoStep[] = [
     title: "6. Sound knobs",
     target: "six sound controls",
     body:
-      "The knob cluster edits the selected slot directly. The center display names the slot by default, then explains the focused control while you adjust it.",
+      "The knob cluster edits the selected slot directly. Pick a sound slot first, then shape its start, length, pitch, gain, filter, and resonance.",
     showLabel: "Move pitch"
   },
   {
@@ -673,35 +668,19 @@ const SOUND_KNOBS: Array<{
 ];
 
 function SoundControls({ slot, onChange }: { slot: SoundSlot; onChange: (param: SlotParamKey, value: number) => void }) {
-  const [activeParam, setActiveParam] = useState<SlotParamKey | null>(null);
-  const activeConfig = SOUND_KNOBS.find((config) => config.param === activeParam);
-  const readoutValue = activeConfig ? formatKnobValue(slot[activeConfig.param], activeConfig.unit) : null;
-
   return (
     <div className="sound-controls" aria-label="Sound controls">
-      <div className="sound-readout" aria-live="polite">
-        {activeConfig ? (
-          <>
-            <small>{activeConfig.label}</small>
-            <strong>{readoutValue}</strong>
-            <span>{activeConfig.meaning}</span>
-          </>
-        ) : (
-          <>
-            <small>
-              Slot {format2(slot.id)} {slot.name}
-            </small>
-            <strong>{slot.character ?? (slot.type === "drum" ? "drum source" : "melodic source")}</strong>
-            <span>tuned preset</span>
-          </>
-        )}
-      </div>
       <div className="knob-grid">
         {SOUND_KNOBS.map((config) => {
           const value = slot[config.param];
           const percent = ((value - config.min) / (config.max - config.min)) * 100;
           return (
-            <label className="sound-knob" key={config.param} style={{ "--knob-fill": `${percent}%` } as CSSProperties}>
+            <label
+              className="sound-knob"
+              key={config.param}
+              title={`${config.label}: ${formatKnobValue(value, config.unit)} ${config.meaning}`}
+              style={{ "--knob-fill": `${percent}%` } as CSSProperties}
+            >
               <span>{config.label}</span>
               <input
                 type="range"
@@ -710,9 +689,7 @@ function SoundControls({ slot, onChange }: { slot: SoundSlot; onChange: (param: 
                 max={config.max}
                 step={config.step}
                 value={value}
-                onFocus={() => setActiveParam(config.param)}
                 onChange={(event) => {
-                  setActiveParam(config.param);
                   onChange(config.param, Number(event.target.value));
                 }}
               />

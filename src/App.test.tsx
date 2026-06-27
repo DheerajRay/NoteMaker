@@ -29,7 +29,7 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByLabelText(/beat flow timeline/i)).toBeInTheDocument();
     expect(screen.queryByText(/no notes written yet/i)).not.toBeInTheDocument();
     expect(screen.getByText(/tap chip x to remove/i)).toBeInTheDocument();
-    expect(screen.getByText(/write mode on: click 1-16/i)).toBeInTheDocument();
+    expect(screen.getByText(/write on: tap steps/i)).toBeInTheDocument();
     expect(screen.getByText(/pick source · 01-16/i)).toBeInTheDocument();
     expect(screen.getByText(/choose the pitch that gets auditioned or written/i)).toBeInTheDocument();
     expect(screen.getByText(/switch between 16 separate loops/i)).toBeInTheDocument();
@@ -43,11 +43,10 @@ describe("PO33 NoteMaker app", () => {
     expect(screen.getByRole("button", { name: /write mode/i })).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("shows a six-knob sound editor with a center readout", () => {
+  it("shows a compact six-knob sound editor", () => {
     render(<App />);
 
-    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/slot 01 mono bass/i);
-    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/round bass/i);
+    expect(screen.getByLabelText(/sound controls/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^trim$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^tone$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^filter$/i })).not.toBeInTheDocument();
@@ -56,12 +55,7 @@ describe("PO33 NoteMaker app", () => {
       expect(screen.getByRole("slider", { name: new RegExp(name, "i") })).toBeInTheDocument();
     }
 
-    fireEvent.focus(screen.getByRole("slider", { name: /pitch/i }));
-    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/pitch/i);
-    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/semitones/i);
-
     fireEvent.change(screen.getByRole("slider", { name: /gain/i }), { target: { value: "1.2" } });
-    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/gain/i);
     expect(screen.getByRole("slider", { name: /gain/i })).toHaveValue("1.2");
   });
 
@@ -71,8 +65,6 @@ describe("PO33 NoteMaker app", () => {
     fireEvent.click(screen.getByRole("button", { name: /next sound slot page/i }));
     fireEvent.click(screen.getByRole("button", { name: /slot 17 velvet keys melodic/i }));
 
-    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/slot 17 velvet keys/i);
-    expect(screen.getByLabelText(/sound controls/i)).toHaveTextContent(/soft keys/i);
     expect(screen.getByRole("slider", { name: /filter/i })).toHaveValue("0.76");
   });
 

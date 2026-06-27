@@ -73,9 +73,10 @@ await desktop.getByText(/could not import this project/i).waitFor();
 
 check(await desktop.getByRole("button", { name: /sound import paused/i }).count() === 0, "Top-bar sound import must be removed.");
 await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
-check((await desktop.getByLabel("Sound controls").textContent())?.toLowerCase().includes("round bass"), "Sound controls must show selected slot tuning.");
+check(await desktop.getByRole("button", { name: /write mode/i }).isVisible(), "Write mode must stay visible in the step header.");
+check(await desktop.getByRole("slider", { name: /start/i }).isVisible(), "Sound controls must expose compact knobs.");
 await desktop.getByRole("slider", { name: /gain/i }).fill("1.2");
-check((await desktop.getByLabel("Sound controls").textContent())?.toLowerCase().includes("gain"), "Sound controls must react to knob changes.");
+check(await desktop.getByRole("slider", { name: /gain/i }).inputValue() === "1.2", "Sound controls must react to knob changes.");
 await desktop.getByRole("button", { name: /next sound slot page/i }).click();
 await desktop.getByRole("button", { name: /slot 17 velvet keys/i }).click();
 await desktop.getByRole("button", { name: /key 05/i }).click();
