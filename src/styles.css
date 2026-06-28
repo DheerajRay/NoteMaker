@@ -15,6 +15,7 @@
   --green: #8ddb83;
   --blue: #62a6d7;
   --shadow: 0 30px 80px rgba(0, 0, 0, 0.38);
+  --device-frame-min-height: 1125px;
 }
 
 * {
@@ -94,6 +95,7 @@ h2 {
 
 .device-shell {
   width: min(1180px, 100%);
+  min-height: var(--device-frame-min-height);
   display: grid;
   gap: 14px;
   padding: clamp(14px, 2vw, 24px);
@@ -894,13 +896,11 @@ h2 {
   color: #8f1f17 !important;
 }
 
-.production-app {
-  align-items: start;
-}
-
 .production-shell {
   width: min(1180px, 100%);
+  min-height: var(--device-frame-min-height);
   display: grid;
+  align-content: start;
   gap: 14px;
   padding: clamp(14px, 2vw, 24px);
   border: 2px solid #0c0c0a;
@@ -1293,12 +1293,14 @@ h2 {
   }
 
   .device-shell {
+    min-height: 0;
     gap: 10px;
     padding: 10px;
     border-radius: 14px;
   }
 
   .production-shell {
+    min-height: 0;
     gap: 10px;
     padding: 10px;
     border-radius: 14px;

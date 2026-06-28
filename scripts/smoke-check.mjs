@@ -91,8 +91,16 @@ await desktop.reload({ waitUntil: "networkidle" });
 await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
 await desktop.getByRole("button", { name: /key 11/i }).click();
 await desktop.waitForTimeout(150);
+const noteMakerShellBounds = await desktop.locator(".device-shell").boundingBox();
 await desktop.getByRole("button", { name: /open production arranger/i }).click();
 await desktop.getByRole("heading", { name: "Production" }).waitFor();
+const productionShellBounds = await desktop.locator(".production-shell").boundingBox();
+check(Boolean(noteMakerShellBounds && productionShellBounds), "Both NoteMaker and Production shells must be measurable.");
+if (noteMakerShellBounds && productionShellBounds) {
+  check(Math.abs(noteMakerShellBounds.x - productionShellBounds.x) <= 1, `Shell x-position changed between views: ${JSON.stringify({ noteMakerShellBounds, productionShellBounds })}.`);
+  check(Math.abs(noteMakerShellBounds.width - productionShellBounds.width) <= 1, `Shell width changed between views: ${JSON.stringify({ noteMakerShellBounds, productionShellBounds })}.`);
+  check(Math.abs(noteMakerShellBounds.height - productionShellBounds.height) <= 1, `Shell height changed between views: ${JSON.stringify({ noteMakerShellBounds, productionShellBounds })}.`);
+}
 await desktop.getByRole("button", { name: /source pattern 01/i }).click();
 await desktop.getByRole("button", { name: /place pattern 01 on drums bar 01/i }).click();
 await desktop.getByRole("button", { name: /extend clip p01 drums bar 01/i }).click();
