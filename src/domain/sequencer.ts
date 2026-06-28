@@ -28,6 +28,9 @@ export type SchedulePlanEntry = {
   filter: number;
   resonance: number;
   chokeTargets: number[];
+  arrangementClipId?: string;
+  laneId?: string;
+  repeatBar?: number;
 };
 
 export function stepToToneTime(step: number): string {
@@ -52,18 +55,51 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
   const pattern = project.patterns.find((candidate) => candidate.id === project.activePatternId);
   if (!pattern) return [];
 
+  return planPatternEntries(project, pattern, 0, 0, {}).sort(compareEntries);
+}
+
+export function createArrangementSchedulePlan(project: Project): SchedulePlanEntry[] {
+  const arrangement = project.arrangement;
+  if (!arrangement) return [];
+  const lanes = new Map(arrangement.lanes.map((lane) => [lane.id, lane]));
+
+  return arrangement.clips.flatMap((clip) => {
+    const lane = lanes.get(clip.laneId);
+    const pattern = project.patterns.find((candidate) => candidate.id === clip.patternId);
+    if (!lane || lane.muted || clip.muted || !pattern) return [];
+    const lengthBars = Math.max(Math.round(clip.lengthBars), 1);
+    return Array.from({ length: lengthBars }, (_, repeatBar) =>
+      planPatternEntries(project, pattern, clip.startBar + repeatBar, repeatBar, {
+        arrangementClipId: clip.id,
+        laneId: lane.id
+      })
+    ).flat();
+  }).sort(compareEntries);
+}
+
+function planPatternEntries(
+  project: Project,
+  pattern: Project["patterns"][number],
+  startBar: number,
+  repeatBar: number,
+  metadata: Pick<SchedulePlanEntry, "arrangementClipId" | "laneId">
+): SchedulePlanEntry[] {
+  const startStep = startBar * STEPS_PER_PATTERN;
   return pattern.steps.flatMap((step) =>
     step.triggers.flatMap((trigger) => {
       const slot = project.slots.find((candidate) => candidate.id === trigger.slotId);
       if (!slot?.sample) return [];
       const trimSpan = Math.max(slot.trimEnd - slot.trimStart, 0.01);
       const drumVariation = slot.type === "drum" ? drumVariationForKey(trigger.keyIndex) : null;
-      const seconds = stepToSeconds(step.index, project.tempo);
+      const absoluteStep = startStep + step.index;
+      const seconds = stepToSeconds(absoluteStep, project.tempo);
       const timingOffsetTicks = step.timingOffsetTicks ?? 0;
       const timingOffsetSeconds = timingOffsetTicksToSeconds(timingOffsetTicks, project.tempo);
       return {
+        ...metadata,
         patternId: pattern.id,
         stepIndex: step.index,
+        repeatBar,
         slotId: slot.id,
         keyIndex: trigger.keyIndex,
         sampleId: slot.sample.id,
@@ -87,7 +123,11 @@ export function createSchedulePlan(project: Project): SchedulePlanEntry[] {
         chokeTargets: slot.sample.chokeTargets ?? []
       };
     })
-  ).sort((a, b) => a.stepIndex - b.stepIndex || a.slotId - b.slotId || a.keyIndex - b.keyIndex);
+  );
+}
+
+function compareEntries(a: SchedulePlanEntry, b: SchedulePlanEntry): number {
+  return a.scheduledSeconds - b.scheduledSeconds || a.stepIndex - b.stepIndex || a.slotId - b.slotId || a.keyIndex - b.keyIndex;
 }
 
 function clamp(value: number, min: number, max: number): number {

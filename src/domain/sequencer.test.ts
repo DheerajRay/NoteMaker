@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { adjustStepTimingOffset, createDefaultProject, toggleStepTrigger, updateSlotParams } from "./project";
-import { createSchedulePlan, stepToSeconds, stepToToneTime } from "./sequencer";
+import { createArrangementSchedulePlan, createSchedulePlan, stepToSeconds, stepToToneTime } from "./sequencer";
+import type { Project } from "./types";
 
 describe("PO33 sequencer timing", () => {
   it("converts 16th-note steps into Tone.js transport notation", () => {
@@ -116,5 +117,74 @@ describe("PO33 schedule planning", () => {
     expect(sub.sampleName).toBe("Imported Kick");
     expect(sub.playbackRate).not.toBeCloseTo(chip.playbackRate);
     expect(sub.durationSeconds).not.toBeCloseTo(chip.durationSeconds);
+  });
+});
+
+describe("Pattern production arrangement planning", () => {
+  it("schedules repeated pattern clips at bar positions", () => {
+    let project = createDefaultProject();
+    project = toggleStepTrigger(project, 0, 9, 1);
+    project = toggleStepTrigger(project, 4, 10, 1);
+    project = {
+      ...project,
+      tempo: 120,
+      arrangement: {
+        ...project.arrangement,
+        clips: [{ id: "clip-1", patternId: 1, laneId: "drums", startBar: 2, lengthBars: 2, muted: false }]
+      }
+    };
+
+    const plan = createArrangementSchedulePlan(project);
+
+    expect(plan).toHaveLength(4);
+    expect(plan.map((entry) => entry.scheduledSeconds)).toEqual([4, 4.5, 6, 6.5]);
+  });
+
+  it("excludes muted clips and muted lanes from the production plan", () => {
+    let project = toggleStepTrigger(createDefaultProject(), 0, 9, 1);
+    project = {
+      ...project,
+      arrangement: {
+        ...project.arrangement,
+        lanes: project.arrangement.lanes.map((lane) => (lane.id === "bass" ? { ...lane, muted: true } : lane)),
+        clips: [
+          { id: "clip-muted", patternId: 1, laneId: "drums", startBar: 0, lengthBars: 1, muted: true },
+          { id: "lane-muted", patternId: 1, laneId: "bass", startBar: 0, lengthBars: 1, muted: false }
+        ]
+      }
+    };
+
+    expect(createArrangementSchedulePlan(project)).toEqual([]);
+  });
+
+  it("allows overlapping clips in the same lane to both schedule", () => {
+    let project = toggleStepTrigger(createDefaultProject(), 0, 9, 1);
+    project = {
+      ...project,
+      arrangement: {
+        ...project.arrangement,
+        clips: [
+          { id: "clip-a", patternId: 1, laneId: "drums", startBar: 0, lengthBars: 1, muted: false },
+          { id: "clip-b", patternId: 1, laneId: "drums", startBar: 0, lengthBars: 1, muted: false }
+        ]
+      }
+    };
+
+    expect(createArrangementSchedulePlan(project)).toHaveLength(2);
+  });
+
+  it("ignores clips with invalid pattern or lane references", () => {
+    const project = {
+      ...toggleStepTrigger(createDefaultProject(), 0, 9, 1),
+      arrangement: {
+        ...createDefaultProject().arrangement,
+        clips: [
+          { id: "missing-pattern", patternId: 99, laneId: "drums", startBar: 0, lengthBars: 1, muted: false },
+          { id: "missing-lane", patternId: 1, laneId: "nope", startBar: 0, lengthBars: 1, muted: false }
+        ]
+      }
+    } as Project;
+
+    expect(createArrangementSchedulePlan(project)).toEqual([]);
   });
 });

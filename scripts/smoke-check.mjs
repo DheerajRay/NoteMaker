@@ -91,6 +91,18 @@ await desktop.reload({ waitUntil: "networkidle" });
 await desktop.getByRole("button", { name: /slot 01 mono bass/i }).click();
 await desktop.getByRole("button", { name: /key 11/i }).click();
 await desktop.waitForTimeout(150);
+await desktop.getByRole("button", { name: /open production arranger/i }).click();
+await desktop.getByRole("heading", { name: "Production" }).waitFor();
+await desktop.getByRole("button", { name: /source pattern 01/i }).click();
+await desktop.getByRole("button", { name: /place pattern 01 on drums bar 01/i }).click();
+await desktop.getByRole("button", { name: /extend clip p01 drums bar 01/i }).click();
+check(await desktop.getByRole("button", { name: /clip p01 drums bar 01 length 2/i }).isVisible(), "Production timeline must create and extend clips.");
+await desktop.getByRole("button", { name: /play arrangement/i }).click();
+await desktop.getByRole("button", { name: /stop arrangement/i }).waitFor();
+await desktop.waitForTimeout(250);
+await desktop.getByRole("button", { name: /stop arrangement/i }).click();
+await desktop.screenshot({ path: join(outputDir, "notemaker-smoke-production.png"), fullPage: true });
+await desktop.getByRole("button", { name: /back to notemaker/i }).click();
 
 const downloadPromise = desktop.waitForEvent("download");
 await desktop.getByRole("button", { name: /export project/i }).click();
@@ -119,6 +131,19 @@ const metrics = await mobile.evaluate(() => ({
 check(metrics.scrollWidth <= metrics.clientWidth, `Mobile horizontal overflow: ${JSON.stringify(metrics)}.`);
 check(metrics.undersized.length === 0, `Mobile controls below 34px: ${JSON.stringify(metrics.undersized)}.`);
 check(metrics.scrollHeight <= 1800, `Mobile page is unexpectedly tall: ${metrics.scrollHeight}px.`);
+await mobile.getByRole("button", { name: /open production arranger/i }).click();
+await mobile.getByRole("heading", { name: "Production" }).waitFor();
+const productionMetrics = await mobile.evaluate(() => ({
+  scrollWidth: document.documentElement.scrollWidth,
+  clientWidth: document.documentElement.clientWidth,
+  timelineScrollWidth: document.querySelector(".production-arranger")?.scrollWidth ?? 0,
+  timelineClientWidth: document.querySelector(".production-arranger")?.clientWidth ?? 0
+}));
+check(productionMetrics.scrollWidth <= productionMetrics.clientWidth, `Mobile production page overflow: ${JSON.stringify(productionMetrics)}.`);
+check(
+  productionMetrics.timelineScrollWidth > productionMetrics.timelineClientWidth,
+  `Mobile production timeline should scroll inside its panel: ${JSON.stringify(productionMetrics)}.`
+);
 await mobile.screenshot({ path: join(outputDir, "notemaker-smoke-mobile.png"), fullPage: true });
 
 await browser.close();

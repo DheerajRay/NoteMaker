@@ -1,17 +1,22 @@
 import { create } from "zustand";
 import {
+  addArrangementClip,
   adjustStepTimingOffset,
   createDefaultProject,
   loadProjectFromStorage,
+  moveArrangementClip,
   removeStepTrigger,
+  resizeArrangementClip,
   saveProjectToStorage,
   selectPattern,
   selectSlot,
   setProjectTempo,
+  toggleArrangementClipMute,
+  toggleArrangementLaneMute,
   toggleStepTrigger,
   updateSlotParams
 } from "../domain/project";
-import type { ParamMode, Project, SoundSlot } from "../domain/types";
+import type { ArrangementLaneId, ParamMode, Project, SoundSlot } from "../domain/types";
 
 type SlotParamKey = keyof Pick<SoundSlot, "trimStart" | "trimEnd" | "pitch" | "gain" | "filter" | "resonance">;
 
@@ -29,6 +34,11 @@ type ProjectState = {
   setTempo: (tempo: number) => void;
   setParamMode: (mode: ParamMode) => void;
   setSlotParam: (param: SlotParamKey, value: number) => void;
+  addArrangementClip: (patternId: number, laneId: ArrangementLaneId, startBar: number) => void;
+  moveArrangementClip: (clipId: string, laneId: ArrangementLaneId, startBar: number) => void;
+  resizeArrangementClip: (clipId: string, deltaBars: number) => void;
+  toggleArrangementClipMute: (clipId: string) => void;
+  toggleArrangementLaneMute: (laneId: ArrangementLaneId) => void;
   importSampleFile: (file: File | undefined) => Promise<void>;
   importProject: (project: Project) => void;
   setImportError: (message: string | null) => void;
@@ -84,6 +94,16 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!slot) return;
     updateProject(set, () => updateSlotParams(project, slot.id, { [param]: value }));
   },
+
+  addArrangementClip: (patternId, laneId, startBar) => updateProject(set, (project) => addArrangementClip(project, patternId, laneId, startBar)),
+
+  moveArrangementClip: (clipId, laneId, startBar) => updateProject(set, (project) => moveArrangementClip(project, clipId, laneId, startBar)),
+
+  resizeArrangementClip: (clipId, deltaBars) => updateProject(set, (project) => resizeArrangementClip(project, clipId, deltaBars)),
+
+  toggleArrangementClipMute: (clipId) => updateProject(set, (project) => toggleArrangementClipMute(project, clipId)),
+
+  toggleArrangementLaneMute: (laneId) => updateProject(set, (project) => toggleArrangementLaneMute(project, laneId)),
 
   importSampleFile: async (file) => {
     if (!file) return;

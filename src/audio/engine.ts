@@ -1,4 +1,4 @@
-import { createSchedulePlan as planProject, type SchedulePlanEntry, stepToToneTime } from "../domain/sequencer";
+import { createArrangementSchedulePlan, createSchedulePlan as planProject, type SchedulePlanEntry, stepToToneTime } from "../domain/sequencer";
 import type { Project, SampleAsset, SoundSlot } from "../domain/types";
 import { loadImportedAudio } from "./sampleStore";
 import { drumVariationForKey, playbackRateForDrumKey, playbackRateForKey } from "./music";
@@ -85,6 +85,25 @@ export class NoteMakerAudioEngine {
     this.tone.Transport.loop = true;
     this.tone.Transport.loopStart = stepToToneTime(0);
     this.tone.Transport.loopEnd = "1:0:0";
+
+    for (const entry of plan) {
+      const scheduledId = this.tone.Transport.schedule((time) => this.triggerEntry(entry, time), entry.scheduledSeconds);
+      this.scheduledIds.push(scheduledId);
+    }
+    return plan;
+  }
+
+  async scheduleArrangement(project: Project): Promise<SchedulePlanEntry[]> {
+    await this.init();
+    const plan = createArrangementSchedulePlan(project);
+    await this.prepareAssets(project, plan);
+    this.clearSchedule();
+    if (!this.tone) return [];
+
+    this.tone.Transport.bpm.value = project.tempo;
+    this.tone.Transport.loop = true;
+    this.tone.Transport.loopStart = stepToToneTime(0);
+    this.tone.Transport.loopEnd = stepToToneTime(Math.max(project.arrangement.songLengthBars, 1) * 16);
 
     for (const entry of plan) {
       const scheduledId = this.tone.Transport.schedule((time) => this.triggerEntry(entry, time), entry.scheduledSeconds);

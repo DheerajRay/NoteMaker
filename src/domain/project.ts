@@ -1,5 +1,17 @@
 import { STARTER_SOUNDS } from "./starterSounds";
-import { PROJECT_VERSION, type ParamMode, type Pattern, type PatternStep, type Project, type SampleAsset, type SoundSlot } from "./types";
+import {
+  PROJECT_VERSION,
+  type Arrangement,
+  type ArrangementClip,
+  type ArrangementLane,
+  type ArrangementLaneId,
+  type ParamMode,
+  type Pattern,
+  type PatternStep,
+  type Project,
+  type SampleAsset,
+  type SoundSlot
+} from "./types";
 
 const STORAGE_KEY = "notemaker.po33.v1.current";
 const SLOT_COUNT = 48;
@@ -8,6 +20,13 @@ const PATTERN_COUNT = 16;
 const STEPS_PER_PATTERN = 16;
 const MIN_TIMING_OFFSET_TICKS = -3;
 const MAX_TIMING_OFFSET_TICKS = 3;
+const DEFAULT_ARRANGEMENT_LANES: ArrangementLane[] = [
+  { id: "drums", name: "Drums", muted: false },
+  { id: "bass", name: "Bass", muted: false },
+  { id: "melody", name: "Melody", muted: false },
+  { id: "texture", name: "Texture", muted: false }
+];
+const DEFAULT_SONG_LENGTH_BARS = 16;
 
 export function createDefaultProject(): Project {
   const now = new Date().toISOString();
@@ -26,7 +45,8 @@ export function createDefaultProject(): Project {
     memoryLimitSeconds: 40,
     slots: STARTER_SOUNDS.map(createSlot),
     patterns: Array.from({ length: PATTERN_COUNT }, (_, index) => createPattern(index + 1)),
-    chain: { patternIds: [1] }
+    chain: { patternIds: [1] },
+    arrangement: createArrangement()
   };
 }
 
@@ -58,7 +78,8 @@ export function parseProject(source: string): Project {
     paramMode: normalizeParamMode(parsed.paramMode),
     slots,
     patterns: parsed.patterns.map(normalizePattern).slice(0, PATTERN_COUNT),
-    chain: parsed.chain?.patternIds?.length ? parsed.chain : { patternIds: [parsed.activePatternId ?? 1] }
+    chain: parsed.chain?.patternIds?.length ? parsed.chain : { patternIds: [parsed.activePatternId ?? 1] },
+    arrangement: normalizeArrangement(parsed.arrangement)
   };
 }
 
@@ -183,6 +204,78 @@ export function setProjectTempo(project: Project, tempo: number): Project {
   return touch({ ...project, tempo: clamp(Math.round(tempo), 60, 240) });
 }
 
+export function addArrangementClip(project: Project, patternId: number, laneId: ArrangementLaneId, startBar: number): Project {
+  const pattern = project.patterns.find((candidate) => candidate.id === patternId);
+  const lane = project.arrangement.lanes.find((candidate) => candidate.id === laneId);
+  if (!pattern || !lane) return project;
+  const safeStartBar = clamp(Math.round(startBar), 0, project.arrangement.songLengthBars - 1);
+  const clip: ArrangementClip = {
+    id: createId("clip"),
+    patternId: pattern.id,
+    laneId: lane.id,
+    startBar: safeStartBar,
+    lengthBars: 1,
+    muted: false
+  };
+  return touch({
+    ...project,
+    arrangement: {
+      ...project.arrangement,
+      clips: [...project.arrangement.clips, clip]
+    }
+  });
+}
+
+export function moveArrangementClip(project: Project, clipId: string, laneId: ArrangementLaneId, startBar: number): Project {
+  const lane = project.arrangement.lanes.find((candidate) => candidate.id === laneId);
+  if (!lane) return project;
+  return touch({
+    ...project,
+    arrangement: {
+      ...project.arrangement,
+      clips: project.arrangement.clips.map((clip) =>
+        clip.id === clipId
+          ? { ...clip, laneId, startBar: clamp(Math.round(startBar), 0, project.arrangement.songLengthBars - 1) }
+          : clip
+      )
+    }
+  });
+}
+
+export function resizeArrangementClip(project: Project, clipId: string, deltaBars: number): Project {
+  return touch({
+    ...project,
+    arrangement: {
+      ...project.arrangement,
+      clips: project.arrangement.clips.map((clip) => {
+        if (clip.id !== clipId) return clip;
+        const maxLength = project.arrangement.songLengthBars - clip.startBar;
+        return { ...clip, lengthBars: clamp(Math.round(clip.lengthBars + deltaBars), 1, Math.max(maxLength, 1)) };
+      })
+    }
+  });
+}
+
+export function toggleArrangementClipMute(project: Project, clipId: string): Project {
+  return touch({
+    ...project,
+    arrangement: {
+      ...project.arrangement,
+      clips: project.arrangement.clips.map((clip) => (clip.id === clipId ? { ...clip, muted: !clip.muted } : clip))
+    }
+  });
+}
+
+export function toggleArrangementLaneMute(project: Project, laneId: ArrangementLaneId): Project {
+  return touch({
+    ...project,
+    arrangement: {
+      ...project.arrangement,
+      lanes: project.arrangement.lanes.map((lane) => (lane.id === laneId ? { ...lane, muted: !lane.muted } : lane))
+    }
+  });
+}
+
 export function saveProjectToStorage(project: Project): void {
   window.localStorage.setItem(STORAGE_KEY, serializeProject(project));
 }
@@ -241,6 +334,14 @@ function createPattern(id: number): Pattern {
   };
 }
 
+function createArrangement(): Arrangement {
+  return {
+    lanes: DEFAULT_ARRANGEMENT_LANES.map((lane) => ({ ...lane })),
+    clips: [],
+    songLengthBars: DEFAULT_SONG_LENGTH_BARS
+  };
+}
+
 function createSlices() {
   return Array.from({ length: PERFORMANCE_KEY_COUNT }, (_, index) => ({
     keyIndex: index + 1,
@@ -279,6 +380,32 @@ function normalizeSlot(slot: SoundSlot): SoundSlot {
     resonance: clamp(slot.resonance ?? fallback.resonance, 0, 1),
     slices: Array.isArray(slot.slices) ? slot.slices : fallback.slices
   };
+}
+
+function normalizeArrangement(arrangement: Partial<Arrangement> | undefined): Arrangement {
+  const fallback = createArrangement();
+  const lanes = DEFAULT_ARRANGEMENT_LANES.map((lane) => {
+    const saved = arrangement?.lanes?.find((candidate) => candidate.id === lane.id);
+    return { ...lane, muted: Boolean(saved?.muted) };
+  });
+  const songLengthBars = clamp(Math.round(arrangement?.songLengthBars ?? DEFAULT_SONG_LENGTH_BARS), 1, 128);
+  const laneIds = new Set(lanes.map((lane) => lane.id));
+  const clips = Array.isArray(arrangement?.clips)
+    ? arrangement.clips.flatMap((clip) => {
+        if (!laneIds.has(clip.laneId) || !Number.isFinite(clip.patternId)) return [];
+        const startBar = clamp(Math.round(clip.startBar ?? 0), 0, songLengthBars - 1);
+        const maxLength = Math.max(songLengthBars - startBar, 1);
+        return [{
+          id: typeof clip.id === "string" && clip.id ? clip.id : createId("clip"),
+          patternId: clamp(Math.round(clip.patternId), 1, PATTERN_COUNT),
+          laneId: clip.laneId,
+          startBar,
+          lengthBars: clamp(Math.round(clip.lengthBars ?? 1), 1, maxLength),
+          muted: Boolean(clip.muted)
+        }];
+      })
+    : fallback.clips;
+  return { lanes, clips, songLengthBars };
 }
 
 function normalizePattern(pattern: Pattern): Pattern {

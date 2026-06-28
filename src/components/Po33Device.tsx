@@ -25,6 +25,7 @@ type Po33DeviceProps = {
   onImportError: (message: string) => void;
   onExportProject: () => void;
   onResetProject: () => void;
+  onOpenProduction: () => void;
   onPlay: () => void;
   onStop: () => void;
 };
@@ -56,6 +57,7 @@ export function Po33Device({
   onImportError,
   onExportProject,
   onResetProject,
+  onOpenProduction,
   onPlay,
   onStop
 }: Po33DeviceProps) {
@@ -303,6 +305,9 @@ export function Po33Device({
                 {format2(pattern.id)}
               </button>
             ))}
+            <button type="button" className="production-link-key" aria-label="Open production arranger" onClick={onOpenProduction}>
+              production
+            </button>
           </div>
 
           <TempoControl tempo={project.tempo} onTempoChange={onTempoChange} />

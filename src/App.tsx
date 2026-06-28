@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NoteMakerAudioEngine } from "./audio/engine";
 import { Po33Device } from "./components/Po33Device";
+import { ProductionPage } from "./components/ProductionPage";
 import { downloadProject } from "./domain/project";
 import { createSchedulePlan } from "./domain/sequencer";
 import { useProjectStore } from "./store/useProjectStore";
+
+type AppView = "notemaker" | "production";
 
 export default function App() {
   const {
@@ -21,15 +24,30 @@ export default function App() {
     setSlotParam,
     importProject,
     setImportError,
-    resetProject
+    resetProject,
+    addArrangementClip,
+    moveArrangementClip,
+    resizeArrangementClip,
+    toggleArrangementClipMute,
+    toggleArrangementLaneMute
   } = useProjectStore();
   const [playing, setPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [appView, setAppView] = useState<AppView>(() => hashToView());
   const engineRef = useRef(new NoteMakerAudioEngine());
   const schedulePlan = useMemo(() => createSchedulePlan(project), [project]);
 
   useEffect(() => {
     return () => engineRef.current.dispose();
+  }, []);
+
+  useEffect(() => {
+    function handleHashChange() {
+      setAppView(hashToView());
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   useEffect(() => {
@@ -47,7 +65,11 @@ export default function App() {
 
   async function handlePlay() {
     try {
-      await engineRef.current.scheduleProject(project);
+      if (appView === "production") {
+        await engineRef.current.scheduleArrangement(project);
+      } else {
+        await engineRef.current.scheduleProject(project);
+      }
       setCurrentStep(0);
       await engineRef.current.play();
       setPlaying(true);
@@ -79,6 +101,29 @@ export default function App() {
     setCurrentStep(0);
   }
 
+  function handleViewChange(nextView: AppView) {
+    handleStop();
+    setAppView(nextView);
+    if (window.location.hash !== `#${nextView}`) window.location.hash = nextView;
+  }
+
+  if (appView === "production") {
+    return (
+      <ProductionPage
+        project={project}
+        playing={playing}
+        onBack={() => handleViewChange("notemaker")}
+        onPlay={() => void handlePlay()}
+        onStop={handleStop}
+        onAddClip={addArrangementClip}
+        onMoveClip={moveArrangementClip}
+        onResizeClip={resizeArrangementClip}
+        onToggleClipMute={toggleArrangementClipMute}
+        onToggleLaneMute={toggleArrangementLaneMute}
+      />
+    );
+  }
+
   return (
     <Po33Device
       project={project}
@@ -99,6 +144,7 @@ export default function App() {
       onImportError={setImportError}
       onExportProject={() => downloadProject({ ...project, chain: { patternIds: schedulePlan.length ? project.chain.patternIds : [project.activePatternId] } })}
       onResetProject={resetProject}
+      onOpenProduction={() => handleViewChange("production")}
       onPlay={() => void handlePlay()}
       onStop={handleStop}
     />
@@ -112,4 +158,9 @@ function audioErrorMessage(error: unknown): string {
 function canUseBrowserAudio(): boolean {
   if (typeof window === "undefined") return false;
   return Boolean(window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+}
+
+function hashToView(): AppView {
+  if (typeof window === "undefined") return "notemaker";
+  return window.location.hash === "#production" ? "production" : "notemaker";
 }

@@ -24,6 +24,16 @@ describe("PO33 project model", () => {
     expect(project.slots[32]).toMatchObject({ character: "long low boom", gain: 1.12 });
     expect(project.activeSlotId).toBe(1);
     expect(project.activePatternId).toBe(1);
+    expect(project.arrangement).toMatchObject({
+      songLengthBars: 16,
+      lanes: [
+        { id: "drums", name: "Drums", muted: false },
+        { id: "bass", name: "Bass", muted: false },
+        { id: "melody", name: "Melody", muted: false },
+        { id: "texture", name: "Texture", muted: false }
+      ],
+      clips: []
+    });
   });
 
   it("toggles pattern triggers without duplicating the same slot and key on a step", () => {
@@ -77,6 +87,45 @@ describe("PO33 project model", () => {
     expect(parsed.slots[16].name).toBe("Velvet Keys");
     expect(parsed.slots[16]).toMatchObject({ character: "soft keys", filter: 0.76 });
     expect(parsed.slots[47]).toMatchObject({ id: 48, name: "Add Sound", sample: null, isPlaceholder: true });
+  });
+
+  it("hydrates older projects with an empty production arrangement", () => {
+    const legacy = createDefaultProject();
+    const { arrangement: _arrangement, ...legacyWithoutArrangement } = legacy;
+
+    const parsed = parseProject(JSON.stringify(legacyWithoutArrangement));
+
+    expect(parsed.arrangement).toMatchObject({
+      songLengthBars: 16,
+      lanes: expect.arrayContaining([
+        expect.objectContaining({ id: "drums", muted: false }),
+        expect.objectContaining({ id: "texture", muted: false })
+      ]),
+      clips: []
+    });
+  });
+
+  it("preserves production arrangement clips through export and import", () => {
+    const project = createDefaultProject();
+    const arranged = {
+      ...project,
+      arrangement: {
+        ...project.arrangement,
+        lanes: project.arrangement.lanes.map((lane) => (lane.id === "texture" ? { ...lane, muted: true } : lane)),
+        clips: [
+          { id: "clip-a", patternId: 1, laneId: "drums" as const, startBar: 0, lengthBars: 4, muted: false },
+          { id: "clip-b", patternId: 2, laneId: "melody" as const, startBar: 14, lengthBars: 9, muted: true }
+        ]
+      }
+    };
+
+    const parsed = parseProject(serializeProject(arranged));
+
+    expect(parsed.arrangement.lanes.find((lane) => lane.id === "texture")?.muted).toBe(true);
+    expect(parsed.arrangement.clips).toEqual([
+      { id: "clip-a", patternId: 1, laneId: "drums", startBar: 0, lengthBars: 4, muted: false },
+      { id: "clip-b", patternId: 2, laneId: "melody", startBar: 14, lengthBars: 2, muted: true }
+    ]);
   });
 
   it("preserves saved slot edits instead of overwriting them with tuned defaults", () => {

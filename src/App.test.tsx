@@ -6,6 +6,7 @@ import { useProjectStore } from "./store/useProjectStore";
 
 describe("PO33 NoteMaker app", () => {
   beforeEach(() => {
+    window.history.pushState(null, "", "/");
     window.localStorage.clear();
     useProjectStore.setState({
       project: createDefaultProject(),
@@ -225,5 +226,61 @@ describe("PO33 NoteMaker app", () => {
     fireEvent.click(screen.getByRole("button", { name: /next demo step/i }));
 
     expect(screen.getByText(/key row chooses the pitch or slice/i)).toBeInTheDocument();
+  });
+
+  it("switches to the production timeline from the pattern bank", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /open production arranger/i }));
+
+    expect(screen.getByRole("heading", { name: /production/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/pattern production arranger/i)).toBeInTheDocument();
+    expect(screen.getByText(/drums/i)).toBeInTheDocument();
+    expect(screen.getByText(/bass/i)).toBeInTheDocument();
+    expect(screen.getByText(/melody/i)).toBeInTheDocument();
+    expect(screen.getByText(/texture/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /back to notemaker/i })).toBeInTheDocument();
+  });
+
+  it("places, extends, mutes, and stacks production pattern clips", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /open production arranger/i }));
+    fireEvent.click(screen.getByRole("button", { name: /source pattern 01/i }));
+    fireEvent.click(screen.getByRole("button", { name: /place pattern 01 on drums bar 01/i }));
+
+    expect(screen.getByRole("button", { name: /clip p01 drums bar 01 length 1/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /extend clip p01 drums bar 01/i }));
+    expect(screen.getByRole("button", { name: /clip p01 drums bar 01 length 2/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /mute clip p01 drums bar 01/i }));
+    expect(screen.getByRole("button", { name: /clip p01 drums bar 01 length 2 muted/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /place pattern 01 on drums bar 01/i }));
+    expect(screen.getAllByText(/P01/)).toHaveLength(2);
+    expect(screen.getByLabelText(/drums lane stack 2 at bar 01/i)).toBeInTheDocument();
+  });
+
+  it("moves a production clip by desktop drag and drop", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /open production arranger/i }));
+    fireEvent.click(screen.getByRole("button", { name: /source pattern 01/i }));
+    fireEvent.click(screen.getByRole("button", { name: /place pattern 01 on drums bar 01/i }));
+
+    const dataTransfer = {
+      data: {} as Record<string, string>,
+      setData(type: string, value: string) {
+        this.data[type] = value;
+      },
+      getData(type: string) {
+        return this.data[type];
+      }
+    };
+    fireEvent.dragStart(screen.getByRole("button", { name: /clip p01 drums bar 01 length 1/i }), { dataTransfer });
+    fireEvent.drop(screen.getByRole("button", { name: /place pattern 01 on bass bar 03/i }), { dataTransfer });
+
+    expect(screen.getByRole("button", { name: /clip p01 bass bar 03 length 1/i })).toBeInTheDocument();
   });
 });

@@ -69,6 +69,29 @@ export type PatternChain = {
   patternIds: number[];
 };
 
+export type ArrangementLaneId = "drums" | "bass" | "melody" | "texture";
+
+export type ArrangementLane = {
+  id: ArrangementLaneId;
+  name: string;
+  muted: boolean;
+};
+
+export type ArrangementClip = {
+  id: string;
+  patternId: number;
+  laneId: ArrangementLaneId;
+  startBar: number;
+  lengthBars: number;
+  muted: boolean;
+};
+
+export type Arrangement = {
+  lanes: ArrangementLane[];
+  clips: ArrangementClip[];
+  songLengthBars: number;
+};
+
 export type Project = {
   version: ProjectVersion;
   id: string;
@@ -84,4 +107,5 @@ export type Project = {
   slots: SoundSlot[];
   patterns: Pattern[];
   chain: PatternChain;
+  arrangement: Arrangement;
 };
