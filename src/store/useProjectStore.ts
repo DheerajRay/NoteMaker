@@ -3,9 +3,11 @@ import {
   addArrangementClip,
   adjustStepTimingOffset,
   createDefaultProject,
+  loadDemoArrangement,
   loadProjectFromStorage,
   moveArrangementClip,
   removeStepTrigger,
+  resetArrangement,
   resizeArrangementClip,
   saveProjectToStorage,
   selectPattern,
@@ -39,6 +41,8 @@ type ProjectState = {
   resizeArrangementClip: (clipId: string, deltaBars: number) => void;
   toggleArrangementClipMute: (clipId: string) => void;
   toggleArrangementLaneMute: (laneId: ArrangementLaneId) => void;
+  resetArrangement: () => void;
+  loadDemoArrangement: () => void;
   importSampleFile: (file: File | undefined) => Promise<void>;
   importProject: (project: Project) => void;
   setImportError: (message: string | null) => void;
@@ -104,6 +108,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   toggleArrangementClipMute: (clipId) => updateProject(set, (project) => toggleArrangementClipMute(project, clipId)),
 
   toggleArrangementLaneMute: (laneId) => updateProject(set, (project) => toggleArrangementLaneMute(project, laneId)),
+
+  resetArrangement: () => updateProject(set, (project) => resetArrangement(project)),
+
+  loadDemoArrangement: () => updateProject(set, (project) => loadDemoArrangement(project)),
 
   importSampleFile: async (file) => {
     if (!file) return;

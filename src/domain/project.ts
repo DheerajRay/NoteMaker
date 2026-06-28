@@ -276,6 +276,28 @@ export function toggleArrangementLaneMute(project: Project, laneId: ArrangementL
   });
 }
 
+export function resetArrangement(project: Project): Project {
+  return touch({
+    ...project,
+    arrangement: createArrangement()
+  });
+}
+
+export function loadDemoArrangement(project: Project): Project {
+  return touch({
+    ...project,
+    arrangement: {
+      ...createArrangement(),
+      clips: [
+        { id: "demo-drums", patternId: 1, laneId: "drums", startBar: 0, lengthBars: 4, muted: false },
+        { id: "demo-bass", patternId: 2, laneId: "bass", startBar: 0, lengthBars: 4, muted: false },
+        { id: "demo-melody", patternId: 3, laneId: "melody", startBar: 4, lengthBars: 4, muted: false },
+        { id: "demo-texture", patternId: 4, laneId: "texture", startBar: 8, lengthBars: 4, muted: false }
+      ]
+    }
+  });
+}
+
 export function saveProjectToStorage(project: Project): void {
   window.localStorage.setItem(STORAGE_KEY, serializeProject(project));
 }

@@ -235,11 +235,48 @@ describe("PO33 NoteMaker app", () => {
 
     expect(screen.getByRole("heading", { name: /production/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/pattern production arranger/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /production guide/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /run production demo/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /reset arrangement/i })).toBeInTheDocument();
     expect(screen.getByText(/drums/i)).toBeInTheDocument();
     expect(screen.getByText(/bass/i)).toBeInTheDocument();
     expect(screen.getByText(/melody/i)).toBeInTheDocument();
     expect(screen.getByText(/texture/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /back to notemaker/i })).toBeInTheDocument();
+  });
+
+  it("opens production help explaining how to start", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /open production arranger/i }));
+    fireEvent.click(screen.getByRole("button", { name: /production guide/i }));
+
+    expect(screen.getByRole("dialog", { name: /how production works/i })).toBeInTheDocument();
+    expect(screen.getByText(/pick a source pattern/i)).toBeInTheDocument();
+    expect(screen.getByText(/click any lane and bar/i)).toBeInTheDocument();
+    expect(screen.getByText(/clips repeat for their length/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /close production guide/i }));
+    expect(screen.queryByRole("dialog", { name: /how production works/i })).not.toBeInTheDocument();
+  });
+
+  it("runs and resets the production demo without leaving production", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /open production arranger/i }));
+    fireEvent.click(screen.getByRole("button", { name: /run production demo/i }));
+
+    expect(screen.getByRole("button", { name: /clip p01 drums bar 01 length 4/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clip p02 bass bar 01 length 4/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clip p03 melody bar 05 length 4/i })).toBeInTheDocument();
+    expect(screen.getByText(/demo arrangement loaded/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /reset arrangement/i }));
+
+    expect(screen.queryByRole("button", { name: /clip p01 drums bar 01/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /clip p02 bass bar 01/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/arrangement cleared/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /production/i })).toBeInTheDocument();
   });
 
   it("places, extends, mutes, and stacks production pattern clips", () => {

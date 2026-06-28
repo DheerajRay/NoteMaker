@@ -12,6 +12,8 @@ type ProductionPageProps = {
   onResizeClip: (clipId: string, deltaBars: number) => void;
   onToggleClipMute: (clipId: string) => void;
   onToggleLaneMute: (laneId: ArrangementLaneId) => void;
+  onResetArrangement: () => void;
+  onLoadDemoArrangement: () => void;
 };
 
 export function ProductionPage({
@@ -24,10 +26,14 @@ export function ProductionPage({
   onMoveClip,
   onResizeClip,
   onToggleClipMute,
-  onToggleLaneMute
+  onToggleLaneMute,
+  onResetArrangement,
+  onLoadDemoArrangement
 }: ProductionPageProps) {
   const [selectedPatternId, setSelectedPatternId] = useState(1);
   const [draggedClipId, setDraggedClipId] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const selectedPattern = project.patterns.find((pattern) => pattern.id === selectedPatternId) ?? project.patterns[0];
   const barCount = project.arrangement.songLengthBars;
 
@@ -46,14 +52,40 @@ export function ProductionPage({
             <h1>Production</h1>
           </div>
           <div className="transport-cluster">
+            <button type="button" className="help-key" aria-label="Production guide" onClick={() => setGuideOpen(true)}>
+              i
+            </button>
+            <button
+              type="button"
+              className="demo-key"
+              aria-label="Run production demo"
+              onClick={() => {
+                onLoadDemoArrangement();
+                setStatusMessage("Demo arrangement loaded.");
+              }}
+            >
+              demo
+            </button>
             <button type="button" className="transport-key" aria-label="Back to NoteMaker" onClick={onBack}>
               notemaker
             </button>
             <button type="button" className="transport-key" aria-label={playing ? "Stop arrangement" : "Play arrangement"} onClick={playing ? onStop : onPlay}>
               {playing ? "stop" : "play"}
             </button>
+            <button
+              type="button"
+              className="transport-key"
+              aria-label="Reset arrangement"
+              onClick={() => {
+                onResetArrangement();
+                setStatusMessage("Arrangement cleared.");
+              }}
+            >
+              reset
+            </button>
           </div>
         </header>
+        {statusMessage ? <p className="production-status">{statusMessage}</p> : null}
 
         <section className="production-source-panel" aria-label="Pattern source strip">
           <ProductionLabel index="1" title="Pattern source" body="pick a loop, then place it on the timeline" />
@@ -99,8 +131,44 @@ export function ProductionPage({
             ))}
           </div>
         </section>
+        {guideOpen ? <ProductionGuide onClose={() => setGuideOpen(false)} /> : null}
       </section>
     </main>
+  );
+}
+
+function ProductionGuide({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="guide-backdrop">
+      <section className="guide-dialog" role="dialog" aria-modal="true" aria-labelledby="production-guide-title">
+        <div className="guide-header">
+          <div>
+            <p className="device-eyebrow">arranger guide</p>
+            <h2 id="production-guide-title">How Production Works</h2>
+          </div>
+          <button type="button" className="help-key" aria-label="Close production guide" onClick={onClose}>
+            x
+          </button>
+        </div>
+        <div className="guide-grid">
+          <GuideItem title="1. Pick a source pattern" body="Use the 01-16 source strip to choose one of the loops you already built in NoteMaker." />
+          <GuideItem title="2. Place it in time" body="Click any lane and bar to place that source pattern as a clip on the arrangement timeline." />
+          <GuideItem title="3. Layer lanes" body="Drums, Bass, Melody, and Texture can all play together. Multiple clips can stack in the same lane." />
+          <GuideItem title="4. Repeat clips" body="Clips repeat for their length. Use + to extend, - to shorten, and M to mute one clip." />
+          <GuideItem title="5. Mute sections" body="Lane mute turns off a whole role while keeping its clips in place for later." />
+          <GuideItem title="6. Start fast" body="Demo loads a simple arrangement. Reset clears only Production clips, not your NoteMaker patterns." />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function GuideItem({ title, body }: { title: string; body: string }) {
+  return (
+    <article>
+      <h3>{title}</h3>
+      <p>{body}</p>
+    </article>
   );
 }
 

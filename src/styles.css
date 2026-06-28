@@ -931,6 +931,18 @@ h2 {
   color: #202417;
 }
 
+.production-status {
+  justify-self: start;
+  padding: 7px 12px;
+  border: 1px solid rgba(15, 17, 12, 0.42);
+  border-radius: 999px;
+  background: #fff3c9;
+  color: #202417;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .production-source-panel,
 .production-arranger {
   display: grid;

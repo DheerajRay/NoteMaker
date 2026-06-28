@@ -101,6 +101,13 @@ if (noteMakerShellBounds && productionShellBounds) {
   check(Math.abs(noteMakerShellBounds.width - productionShellBounds.width) <= 1, `Shell width changed between views: ${JSON.stringify({ noteMakerShellBounds, productionShellBounds })}.`);
   check(Math.abs(noteMakerShellBounds.height - productionShellBounds.height) <= 1, `Shell height changed between views: ${JSON.stringify({ noteMakerShellBounds, productionShellBounds })}.`);
 }
+await desktop.getByRole("button", { name: /production guide/i }).click();
+await desktop.getByRole("dialog", { name: /how production works/i }).waitFor();
+await desktop.getByRole("button", { name: /close production guide/i }).click();
+await desktop.getByRole("button", { name: /run production demo/i }).click();
+check(await desktop.getByRole("button", { name: /clip p01 drums bar 01 length 4/i }).isVisible(), "Production demo must create a drums clip.");
+await desktop.getByRole("button", { name: /reset arrangement/i }).click();
+check(await desktop.getByRole("button", { name: /clip p01 drums bar 01/i }).count() === 0, "Production reset must clear demo clips.");
 await desktop.getByRole("button", { name: /source pattern 01/i }).click();
 await desktop.getByRole("button", { name: /place pattern 01 on drums bar 01/i }).click();
 await desktop.getByRole("button", { name: /extend clip p01 drums bar 01/i }).click();

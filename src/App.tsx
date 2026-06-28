@@ -29,7 +29,9 @@ export default function App() {
     moveArrangementClip,
     resizeArrangementClip,
     toggleArrangementClipMute,
-    toggleArrangementLaneMute
+    toggleArrangementLaneMute,
+    resetArrangement,
+    loadDemoArrangement
   } = useProjectStore();
   const [playing, setPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -120,6 +122,8 @@ export default function App() {
         onResizeClip={resizeArrangementClip}
         onToggleClipMute={toggleArrangementClipMute}
         onToggleLaneMute={toggleArrangementLaneMute}
+        onResetArrangement={resetArrangement}
+        onLoadDemoArrangement={loadDemoArrangement}
       />
     );
   }
