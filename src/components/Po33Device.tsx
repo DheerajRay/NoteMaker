@@ -289,11 +289,16 @@ export function Po33Device({
 
         <section className="lower-panel">
           <div className="pattern-bank" aria-label="Pattern bank">
-            <ControlLabel
-              index="5"
-              title="Patterns"
-              body="switch between 16 separate loops"
-            />
+            <div className="pattern-bank-header">
+              <ControlLabel
+                index="5"
+                title="Patterns"
+                body="switch between 16 separate loops"
+              />
+              <button type="button" className="production-link-key" aria-label="Open production arranger" onClick={onOpenProduction}>
+                production
+              </button>
+            </div>
             {project.patterns.map((pattern) => (
               <button
                 type="button"
@@ -305,9 +310,6 @@ export function Po33Device({
                 {format2(pattern.id)}
               </button>
             ))}
-            <button type="button" className="production-link-key" aria-label="Open production arranger" onClick={onOpenProduction}>
-              production
-            </button>
           </div>
 
           <TempoControl tempo={project.tempo} onTempoChange={onTempoChange} />

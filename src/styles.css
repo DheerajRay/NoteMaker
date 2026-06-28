@@ -731,8 +731,20 @@ h2 {
   align-content: start;
 }
 
+.pattern-bank-header {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.pattern-bank-header .control-label {
+  grid-column: auto;
+}
+
 .production-link-key {
-  grid-column: span 4;
+  min-width: 132px;
   min-height: 42px;
   padding: 0 12px;
   border-radius: 16px;
@@ -1545,9 +1557,15 @@ h2 {
     gap: 6px;
   }
 
+  .pattern-bank-header {
+    grid-template-columns: 1fr auto;
+    gap: 7px;
+  }
+
   .production-link-key {
-    grid-column: span 4;
+    min-width: 112px;
     min-height: 38px;
+    padding: 0 8px;
     border-radius: 12px;
   }
 
